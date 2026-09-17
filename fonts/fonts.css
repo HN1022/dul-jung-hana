@@ -1,0 +1,15 @@
+/* tools/build-fonts.py 가 만든 파일. 직접 고치지 말 것. */
+@font-face {
+  font-family: "Noto Sans KR";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("noto-sans-kr.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Baloo 2";
+  font-style: normal;
+  font-weight: 600 800;
+  font-display: swap;
+  src: url("baloo2.woff2") format("woff2");
+}
