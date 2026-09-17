@@ -6,13 +6,17 @@
 외부 라이브러리 없이 PNG를 직접 써서 만든다. 색이나 모양을 바꾸려면 아래 상수만 고치고 다시 실행:
 
     python tools/make-icons.py
+
+웹(icons/)과 안드로이드 앱(android/app/src/main/res/)용 이미지를 한 번에 만든다.
 """
 import math
 import os
 import struct
 import zlib
 
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "icons")
+ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+WEB_OUT = os.path.join(ROOT, "icons")
+ANDROID_RES = os.path.join(ROOT, "android", "app", "src", "main", "res")
 
 # ---- 색 (게임 CSS와 같은 값) ----
 BG = (0x0F, 0x15, 0x1B)          # --bg (어두운 테마 배경)
@@ -42,9 +46,9 @@ def blend(a, b, t):
 
 
 class Canvas:
-    def __init__(self, size):
-        self.n = size
-        self.px = bytearray(size * size * 4)  # RGBA, 투명으로 시작
+    def __init__(self, w, h):
+        self.w, self.h = w, h
+        self.px = bytearray(w * h * 4)  # RGBA, 투명으로 시작
 
     def rrect(self, cx, cy, w, h, r, color, angle=0.0, shade=False):
         """가운데가 (cx, cy)인 둥근 사각형. angle 만큼 기울여 그린다.
@@ -56,8 +60,8 @@ class Canvas:
         ey = (abs(w * sa) + abs(h * ca)) / 2
         hw, hh = w / 2, h / 2
         r = min(r, hw, hh)
-        for py in range(max(0, int(cy - ey)), min(self.n, int(cy + ey) + 2)):
-            for px in range(max(0, int(cx - ex)), min(self.n, int(cx + ex) + 2)):
+        for py in range(max(0, int(cy - ey)), min(self.h, int(cy + ey) + 2)):
+            for px in range(max(0, int(cx - ex)), min(self.w, int(cx + ex) + 2)):
                 dx, dy = px + 0.5 - cx, py + 0.5 - cy
                 lx = dx * ca + dy * sa          # 카드 기준 좌표로 되돌리기
                 ly = -dx * sa + dy * ca
@@ -74,18 +78,18 @@ class Canvas:
                         c = blend(color, (255, 255, 255), 0.28)
                     elif t > 0.82:
                         c = blend(color, (0, 0, 0), 0.22)
-                i = (py * self.n + px) * 4
+                i = (py * self.w + px) * 4
                 self.px[i], self.px[i + 1], self.px[i + 2], self.px[i + 3] = c[0], c[1], c[2], 255
 
     def downsample(self, factor):
-        n = self.n // factor
-        out = bytearray(n * n * 4)
+        w, h = self.w // factor, self.h // factor
+        out = bytearray(w * h * 4)
         area = factor * factor
-        for y in range(n):
-            for x in range(n):
+        for y in range(h):
+            for x in range(w):
                 r = g = b = a = 0
                 for dy in range(factor):
-                    row = (y * factor + dy) * self.n
+                    row = (y * factor + dy) * self.w
                     for dx in range(factor):
                         i = (row + x * factor + dx) * 4
                         al = self.px[i + 3]
@@ -93,25 +97,26 @@ class Canvas:
                         g += self.px[i + 1] * al
                         b += self.px[i + 2] * al
                         a += al
-                o = (y * n + x) * 4
+                o = (y * w + x) * 4
                 if a:
                     out[o], out[o + 1], out[o + 2] = r // a, g // a, b // a
                 out[o + 3] = a // area
-        return n, out
+        return w, h, out
 
 
-def write_png(path, n, rgba):
+def write_png(path, w, h, rgba):
     def chunk(tag, data):
         return (struct.pack(">I", len(data)) + tag + data
                 + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF))
     raw = bytearray()
-    for y in range(n):
+    for y in range(h):
         raw.append(0)                       # 필터 없음
-        raw += rgba[y * n * 4:(y + 1) * n * 4]
+        raw += rgba[y * w * 4:(y + 1) * w * 4]
     png = (b"\x89PNG\r\n\x1a\n"
-           + chunk(b"IHDR", struct.pack(">IIBBBBB", n, n, 8, 6, 0, 0, 0))
+           + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0))
            + chunk(b"IDAT", zlib.compress(bytes(raw), 9))
            + chunk(b"IEND", b""))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as f:
         f.write(png)
 
@@ -135,34 +140,62 @@ def draw_card(cv, cx, cy, w, h, angle, card_color, cells, block_color):
                  cell, cell, cell * CELL_R, block_color, angle, shade=True)
 
 
-def make(size, radius_frac, content_frac):
-    n = size * SS
-    cv = Canvas(n)
-    cv.rrect(n / 2, n / 2, n, n, n * radius_frac, BG)
+def make(width, height, radius_frac, content_frac, bg=True):
+    """width x height 이미지. content_frac 은 짧은 변 기준 그림 크기.
 
-    s = n * content_frac / 0.82    # 0.82 = 기본 아이콘 기준
-    mid = n / 2
+    radius_frac=0.5 면 원형(안드로이드 round 아이콘), bg=False 면 배경 투명(적응형 아이콘 전경).
+    """
+    w, h = width * SS, height * SS
+    cv = Canvas(w, h)
+    short = min(w, h)
+    if bg:
+        cv.rrect(w / 2, h / 2, w, h, short * radius_frac, BG)
+
+    s = short * content_frac / 0.82    # 0.82 = 기본 아이콘 기준
+    mx, my = w / 2, h / 2
     # 뒤쪽(안 고른) 카드를 먼저, 앞쪽(고른) 카드를 그 위에
-    draw_card(cv, mid + CARD_DX * s, mid - 0.012 * s, CARD_W * s, CARD_H * s,
+    draw_card(cv, mx + CARD_DX * s, my - 0.012 * s, CARD_W * s, CARD_H * s,
               TILT, CARD_BACK, PIECE_BACK, BLOCK_BACK)
-    draw_card(cv, mid - CARD_DX * s, mid + 0.012 * s, CARD_W * s, CARD_H * s,
+    draw_card(cv, mx - CARD_DX * s, my + 0.012 * s, CARD_W * s, CARD_H * s,
               -TILT, CARD_FRONT, PIECE_FRONT, BLOCK_FRONT)
 
     return cv.downsample(SS)
 
 
+def emit(path, width, height, radius_frac, content_frac, bg=True):
+    w, h, rgba = make(width, height, radius_frac, content_frac, bg)
+    write_png(path, w, h, rgba)
+    print("  %-58s %4dx%-4d %6d bytes" % (os.path.relpath(path, ROOT), w, h, os.path.getsize(path)))
+
+
 if __name__ == "__main__":
-    os.makedirs(OUT, exist_ok=True)
-    jobs = [
-        # 파일명,                     크기,  모서리, 그림 크기
-        ("icon-192.png",              192,  0.22,  0.82),
-        ("icon-512.png",              512,  0.22,  0.82),
-        ("icon-maskable-512.png",     512,  0.00,  0.62),   # 안드로이드가 잘라내도 안전하게
-        ("apple-touch-icon.png",      180,  0.00,  0.78),   # iOS가 알아서 둥글게 자름
-        ("favicon-64.png",             64,  0.22,  0.88),
-    ]
-    for name, size, rad, content in jobs:
-        n, rgba = make(size, rad, content)
-        p = os.path.join(OUT, name)
-        write_png(p, n, rgba)
-        print("%-24s %4d  %6d bytes" % (name, size, os.path.getsize(p)))
+    print("웹:")
+    for name, size, rad, content in [
+        # 파일명,                  크기, 모서리, 그림 크기
+        ("icon-192.png",           192, 0.22, 0.82),
+        ("icon-512.png",           512, 0.22, 0.82),
+        ("icon-maskable-512.png",  512, 0.00, 0.62),   # 안드로이드가 잘라내도 안전하게
+        ("apple-touch-icon.png",   180, 0.00, 0.78),   # iOS가 알아서 둥글게 자름
+        ("favicon-64.png",          64, 0.22, 0.88),
+    ]:
+        emit(os.path.join(WEB_OUT, name), size, size, rad, content)
+
+    if os.path.isdir(ANDROID_RES):
+        print("안드로이드:")
+        # 밀도별 크기: 런처 아이콘 48dp, 적응형 아이콘 전경 108dp
+        for dpi, scale in [("mdpi", 1), ("hdpi", 1.5), ("xhdpi", 2), ("xxhdpi", 3), ("xxxhdpi", 4)]:
+            d = os.path.join(ANDROID_RES, "mipmap-" + dpi)
+            n = round(48 * scale)
+            emit(os.path.join(d, "ic_launcher.png"), n, n, 0.22, 0.82)          # 옛 안드로이드용
+            emit(os.path.join(d, "ic_launcher_round.png"), n, n, 0.5, 0.74)     # 동그란 아이콘
+            f = round(108 * scale)
+            # 적응형 아이콘: 폰마다 원·둥근사각형 등으로 잘라내므로 가운데 66dp 안에만 그림
+            emit(os.path.join(d, "ic_launcher_foreground.png"), f, f, 0, 0.56, bg=False)
+
+        # 시작 화면: 어두운 배경 가운데에 아이콘 그림
+        for orient in ("port", "land"):
+            for dpi, (sw, sh) in [("mdpi", (320, 480)), ("hdpi", (480, 800)), ("xhdpi", (720, 1280)),
+                                  ("xxhdpi", (960, 1600)), ("xxxhdpi", (1280, 1920))]:
+                ww, hh = (sw, sh) if orient == "port" else (sh, sw)
+                emit(os.path.join(ANDROID_RES, "drawable-%s-%s" % (orient, dpi), "splash.png"), ww, hh, 0, 0.42)
+        emit(os.path.join(ANDROID_RES, "drawable", "splash.png"), 480, 320, 0, 0.42)

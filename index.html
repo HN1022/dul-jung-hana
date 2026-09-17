@@ -1233,7 +1233,9 @@
 // 서비스 워커 등록 — 홈 화면 추가 + 오프라인 실행용.
 // https 나 localhost 에서만 동작한다(file:// 로 열면 그냥 건너뛴다).
 // Artifact 뷰어 안에서는 등록하지 않는다 — 뷰어가 페이지를 직접 관리하기 때문.
-if ("serviceWorker" in navigator && !window.claude
+// 안드로이드 앱(Capacitor) 안에서도 안 한다 — 파일이 이미 앱에 들어 있어서 캐시가 필요 없고,
+// 오히려 앱을 업데이트해도 옛 파일이 남는 원인이 된다.
+if ("serviceWorker" in navigator && !window.claude && !window.Capacitor
     && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").catch(() => {});

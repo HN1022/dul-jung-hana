@@ -1,0 +1,9 @@
+{
+  "appId": "com.alwaysone.duljunghana",
+  "appName": "둘 중 하나",
+  "webDir": "www",
+  "backgroundColor": "#0F151B",
+  "android": {
+    "allowMixedContent": false
+  }
+}
