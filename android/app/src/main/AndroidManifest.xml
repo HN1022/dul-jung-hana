@@ -25,6 +25,11 @@
 
         </activity>
 
+        <!-- AdMob 앱 ID. ⚠️ 지금은 구글 공식 테스트 ID — 출시 전에 AdMob 에서 받은 실제 앱 ID로 바꿀 것 (money.js 의 광고 ID도) -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

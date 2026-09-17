@@ -33,13 +33,13 @@ def fetch(url):
 
 def game_text():
     """게임 HTML에 들어 있는 모든 글자를 모은다."""
-    for name in ("index.html", "dul-jung-hana.html"):
+    html = ""
+    for name in ("index.html", "i18n.js", "money.js"):
         p = os.path.join(ROOT, name)
         if os.path.exists(p):
-            html = io.open(p, encoding="utf-8").read()
-            break
-    else:
-        raise SystemExit("게임 HTML을 찾을 수 없음")
+            html += io.open(p, encoding="utf-8").read()
+    if not html:
+        raise SystemExit("게임 파일을 찾을 수 없음")
     # 태그 안쪽(속성·스크립트)까지 전부 포함시킨다 — JS 문자열에도 화면 문구가 많다
     chars = {c for c in html if ord(c) > 0x20}
     return "".join(sorted(chars))

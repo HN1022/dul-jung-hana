@@ -7,12 +7,14 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v2";   // v2: 아이콘을 선택 카드 두 장 모양으로 교체
+const VERSION = "v3";   // v3: money.js(광고·결제), i18n.js(영어), 상태바 여백
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
   "./",
   "./index.html",
+  "./i18n.js",
+  "./money.js",
   "./manifest.json",
   "./fonts/fonts.css",
   "./fonts/noto-sans-kr.woff2",
