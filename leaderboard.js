@@ -18,6 +18,9 @@
     apiKey: "AIzaSyCYShLF-w3Hxm3TYqZ_QVs9B29MpUewicw",
     projectId: "either-or-130af",
   };
+  // 구글 로그인(웹) — Google Identity Services 가 쓰는 공개 클라이언트 ID. 승인된 출처: hn1022.github.io, localhost:8123
+  const GOOGLE_CLIENT_ID = "204724489972-d4v4ukg3ejq07q65ruvib7dr1kd8hgl9.apps.googleusercontent.com";
+  const IDP = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${FB.apiKey}`;
   const DOCS = `https://firestore.googleapis.com/v1/projects/${FB.projectId}/databases/(default)/documents`;
   const AUTH_KEY = "duljunghana-auth";
   const NAME_KEY = "duljunghana-name";
@@ -56,7 +59,7 @@
       });
       if (r.ok) {
         const j = await r.json();
-        a = { uid: j.user_id, idToken: j.id_token, refreshToken: j.refresh_token, exp: now + Number(j.expires_in) * 1000 };
+        a = { uid: j.user_id, idToken: j.id_token, refreshToken: j.refresh_token, exp: now + Number(j.expires_in) * 1000, google: a.google };
         ls.set(AUTH_KEY, a);
         return a;
       }
@@ -73,6 +76,118 @@
     return a;
   }
   const myUid = () => (ls.get(AUTH_KEY) || {}).uid || null;
+  const googleInfo = () => (ls.get(AUTH_KEY) || {}).google || null;
+
+  // ---- 구글 연동 ----
+  // 지금 기기의 익명 계정에 구글 계정을 "연결"한다 → uid 가 그대로라 지금까지의 순위표 기록이 유지된다.
+  // 그 구글 계정이 이미 다른 기기에서 연결돼 있으면 그 계정으로 로그인한다(폰을 바꾼 경우) → 기록이 이어진다.
+  async function linkGoogle(googleIdToken) {
+    const a = await token();
+    const call = (withAnon) => fetch(IDP, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.assign({
+        postBody: "id_token=" + encodeURIComponent(googleIdToken) + "&providerId=google.com",
+        requestUri: location.origin, returnSecureToken: true,
+      }, withAnon ? { idToken: a.idToken } : {})),
+    }).then(async (r) => ({ ok: r.ok, j: await r.json().catch(() => ({})) }));
+    const errOf = (x) => (x.j && (x.j.errorMessage || (x.j.error && x.j.error.message))) || "";
+    let res = await call(true);
+    let switched = false;
+    if (!res.ok || errOf(res)) {
+      if (!/FEDERATED_USER_ID_ALREADY_LINKED|CREDENTIAL_ALREADY_IN_USE/.test(errOf(res))) throw new Error(errOf(res) || "link failed");
+      res = await call(false);
+      if (!res.ok || errOf(res)) throw new Error(errOf(res) || "sign-in failed");
+      switched = res.j.localId !== a.uid;
+    }
+    const j = res.j;
+    ls.set(AUTH_KEY, {
+      uid: j.localId, idToken: j.idToken, refreshToken: j.refreshToken,
+      exp: Date.now() + Number(j.expiresIn || 3600) * 1000,
+      google: { email: j.email || "", name: j.displayName || j.fullName || "" },
+    });
+    if (switched) {
+      // 다른 계정으로 들어왔으니 "이미 올린 점수" 기억을 비우고, 그 계정이 선점한 닉네임을 가져온다
+      ls.set(SENT_KEY, {});
+      const mine = await myClaims().catch(() => []);
+      if (mine[0]) setName(mine[0]);
+    } else if (getName()) {
+      // 연동한 김에 지금 닉네임을 내 것으로 선점
+      const c = await claimName(getName()).catch(() => ({ ok: false }));
+      if (!c.ok) return { switched, nameTaken: true };
+    }
+    flush();
+    return { switched };
+  }
+
+  // ---- 닉네임 선점 (구글 연동한 사람만) ----
+  // names/{닉네임 소문자} = { uid, name }. 서버 규칙이 남이 선점한 닉네임으로는 점수를 못 올리게 막는다.
+  const nameKey = (n) => String(n).toLowerCase();
+  async function nameOwner(name) {
+    const r = await fetch(`${DOCS}/names/${encodeURIComponent(nameKey(name))}`);
+    if (r.status === 404) return null;
+    if (!r.ok) throw new Error("names " + r.status);
+    const j = await r.json();
+    return (j.fields && j.fields.uid && j.fields.uid.stringValue) || null;
+  }
+  async function myClaims() {
+    const uid = myUid();
+    if (!uid) return [];
+    const r = await fetch(`${DOCS}:runQuery`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ structuredQuery: {
+        from: [{ collectionId: "names" }],
+        where: { fieldFilter: { field: { fieldPath: "uid" }, op: "EQUAL", value: { stringValue: uid } } },
+        limit: 20,
+      } }),
+    });
+    if (!r.ok) return [];
+    return (await r.json()).filter((x) => x.document).map((x) => x.document.fields.name.stringValue);
+  }
+  async function claimName(name) {
+    if (!googleInfo()) return { ok: true };   // 연동 안 한 사람은 선점하지 않는다
+    const a = await token();
+    const owner = await nameOwner(name);
+    if (owner && owner !== a.uid) return { ok: false, reason: "taken" };
+    const writes = [];
+    if (!owner) {
+      writes.push({
+        update: { name: `projects/${FB.projectId}/databases/(default)/documents/names/${nameKey(name)}`,
+          fields: { uid: fStr(a.uid), name: fStr(name) } },
+        currentDocument: { exists: false },
+      });
+    }
+    // 예전에 선점했던 다른 닉네임은 놓아준다
+    for (const old of await myClaims()) {
+      if (nameKey(old) !== nameKey(name)) writes.push({ delete: `projects/${FB.projectId}/databases/(default)/documents/names/${nameKey(old)}` });
+    }
+    if (!writes.length) return { ok: true };
+    const r = await fetch(`${DOCS}:commit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + a.idToken },
+      body: JSON.stringify({ writes }),
+    });
+    return r.ok ? { ok: true } : { ok: false, reason: "taken" };
+  }
+
+  // 닉네임 저장: 모양 검사 → (온라인이면) 남이 선점했는지 확인 → 구글 연동 상태면 선점
+  async function saveName(raw) {
+    const c = checkName(raw);
+    if (!c.ok) return c;
+    try {
+      if (typeof navigator === "undefined" || navigator.onLine !== false) {
+        const owner = await nameOwner(c.name);
+        if (owner && owner !== myUid()) return { ok: false, reason: "taken" };
+        if (googleInfo()) {
+          const cl = await claimName(c.name);
+          if (!cl.ok) return cl;
+        }
+      }
+    } catch (e) { /* 오프라인 등 — 일단 저장하고 나중에 올릴 때 서버가 판단 */ }
+    setName(c.name);
+    return { ok: true, name: c.name };
+  }
 
   // ---- 점수 올리기 ----
   const boardId = (mode, level) => mode + "_" + level;
@@ -174,11 +289,25 @@
     });
     if (!r.ok) throw new Error("top " + r.status);
     const rows = await r.json();
+    // 구글 연동으로 선점된 닉네임 목록 → 그 주인이 올린 기록에 🛡 표시
+    const owners = {};
+    try {
+      const nr = await fetch(`${DOCS}:runQuery`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ structuredQuery: { from: [{ collectionId: "names" }], limit: 1000 } }),
+      });
+      if (nr.ok) (await nr.json()).filter((x) => x.document).forEach((x) => {
+        owners[nameKey(x.document.fields.name.stringValue)] = x.document.fields.uid.stringValue;
+      });
+    } catch (e) {}
     return rows.filter((x) => x.document).map((x) => {
       const f = x.document.fields || {};
+      const uid = val(f.uid), name = val(f.name);
       return {
-        uid: val(f.uid), name: val(f.name), score: val(f.score) || 0,
+        uid, name, score: val(f.score) || 0,
         mode: val(f.mode), level: val(f.level), verified: val(f.status) === "ok",
+        owned: !!name && owners[nameKey(name)] === uid,
       };
     });
   }
@@ -186,5 +315,6 @@
   // 인터넷이 다시 연결되면 밀린 기록을 보낸다
   if (typeof window !== "undefined") window.addEventListener("online", () => { flush(); });
 
-  window.Board = { checkName, getName, setName, queue, flush, top, myUid, pendingCount, isPending };
+  window.Board = { checkName, getName, setName, saveName, queue, flush, top, myUid, pendingCount, isPending,
+    linkGoogle, googleInfo, GOOGLE_CLIENT_ID };
 })();
