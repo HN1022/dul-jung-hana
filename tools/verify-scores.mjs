@@ -53,3 +53,4 @@ for (const doc of snap.docs) {
 console.log(`검증할 기록 ${snap.size}개${DRY ? " (DRY_RUN — 실제로 바꾸지 않음)" : ""}`);
 console.log(`  ✓ 통과 ${ok}  ·  ✗ 삭제 ${removed}  ·  건너뜀(다른 버전) ${skipped}`);
 if (lines.length) console.log(lines.join("\n"));
+

@@ -62,11 +62,12 @@ jobs:
         if: github.event_name != 'schedule'
         run: |
           ln -s /tmp/fb/node_modules node_modules
-          node tools/deploy-rules.mjs
+          # 실패하면 오류 내용을 요약(Annotations)에 올린다 — 로그는 로그인해야 보이지만 요약은 누구나 볼 수 있다
+          node tools/deploy-rules.mjs 2> err.txt || { echo "::error::규칙 적용 실패: $(tr '\n' ' ' < err.txt | cut -c1-3000)"; exit 1; }
 
       - name: 점수 검증
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '0' }}
         run: |
           [ -e node_modules ] || ln -s /tmp/fb/node_modules node_modules
-          node tools/verify-scores.mjs
+          node tools/verify-scores.mjs 2> err.txt || { echo "::error::점수 검증 실패: $(tr '\n' ' ' < err.txt | cut -c1-3000)"; exit 1; }

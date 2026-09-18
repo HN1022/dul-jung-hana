@@ -35,3 +35,4 @@ try {
   }
 }
 console.log("Firestore 규칙 적용 완료");
+
