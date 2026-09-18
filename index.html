@@ -1339,7 +1339,8 @@
         try {
           if (!socialReady) socialReady = social.initialize({ google: { webClientId: Board.GOOGLE_CLIENT_ID } });
           await socialReady;
-          const r = await social.login({ provider: "google", options: { scopes: ["email", "profile"] } });
+          // scopes 를 따로 주면 MainActivity 수정이 필요하다 — 기본(이메일·프로필 포함 ID 토큰)으로 충분
+          const r = await social.login({ provider: "google", options: {} });
           idToken = r && r.result && r.result.idToken;
         } catch (e) {
           socialReady = null;
