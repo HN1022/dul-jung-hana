@@ -8,8 +8,8 @@
 // 인증: 비밀 키 없이 GitHub ↔ 구글 클라우드 신뢰 연동(Workload Identity)으로 받은 임시 자격증명을 쓴다.
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
-import { initializeApp, applicationDefault } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+// firebase-admin 은 키 없는 연동(external_account) 자격증명을 못 읽어서, 구글 공식 Firestore 도구를 바로 쓴다.
+import { Firestore, FieldValue } from "@google-cloud/firestore";
 
 const PROJECT = "either-or-130af";
 const DRY = process.env.DRY_RUN === "1";
@@ -20,8 +20,7 @@ vm.createContext(box);
 vm.runInContext(readFileSync(new URL("../engine.js", import.meta.url), "utf8"), box);
 const Engine = box.Engine;
 
-initializeApp({ credential: applicationDefault(), projectId: PROJECT });
-const db = getFirestore();
+const db = new Firestore({ projectId: PROJECT });
 
 const snap = await db.collection("scores").where("status", "==", "pending").get();
 let ok = 0, removed = 0, skipped = 0;
