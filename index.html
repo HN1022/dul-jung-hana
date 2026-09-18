@@ -91,7 +91,8 @@
     display: flex; flex-direction: column; gap: 12px;
   }
 
-  header { display: flex; align-items: center; gap: 8px; }
+  header { display: flex; align-items: center; gap: 6px; }
+  header .chip { min-width: 0; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }   /* 좁은 폰에서 점수 칸이 밀려나지 않게 */
   h1 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.03em; }
   h1 em { font-style: normal; color: var(--c5); }
   .chip {
@@ -106,10 +107,10 @@
   }
   .chip:active, .iconbtn:active { transform: scale(0.95); }
   .scores { display: flex; gap: 6px; margin-left: auto; }
-  .score { position: relative; min-width: 58px; padding: 3px 9px 2px; background: var(--panel); border-radius: 10px; text-align: center; }
-  .score span { display: block; font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+  .score { position: relative; min-width: 54px; padding: 3px 6px 2px; background: var(--panel); border-radius: 10px; text-align: center; }
+  .score span { display: block; font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
   .score b { display: block; font-family: "Baloo 2", system-ui, sans-serif; font-size: 22px; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; }
-  .score.big b { font-size: 30px; }
+  .score.big b { font-size: 22px; }   /* 점수·최고를 같은 크기로 */
   .plus {
     position: absolute; left: 50%; top: 18px; pointer-events: none;
     font-family: "Baloo 2", system-ui, sans-serif; font-weight: 800; font-size: 18px; color: var(--c3);
@@ -136,6 +137,7 @@
     gap: 4px;
     padding: 8px;
     width: 100%; max-width: 100%;
+    box-sizing: border-box;   /* 안쪽 여백까지 100% 안에 — 없으면 보드만 오른쪽으로 16px 삐져나온다 */
     aspect-ratio: 1;
     background: var(--board);
     border-radius: 16px;
@@ -180,7 +182,7 @@
 
   .stepline { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .warn {
-    flex: none; font-size: 12px; font-weight: 700; white-space: nowrap;
+    flex: none; font-size: 13px; font-weight: 700; white-space: nowrap;
     padding: 3px 9px; border-radius: 99px; background: var(--panel); color: var(--muted);
   }
   .warn.soon { background: var(--bad); color: #fff; animation: pulse 0.9s ease-in-out infinite; }
@@ -191,9 +193,9 @@
   }
   .cell.garbage-in { z-index: 2; animation: thud 320ms cubic-bezier(0.3, 0, 0.6, 1.4); }
   @keyframes thud { 0% { transform: scale(1.8); opacity: 0; } 60% { transform: scale(0.92); opacity: 1; } 100% { transform: scale(1); } }
-  .step { margin: 0; min-height: 22px; font-size: 14px; font-weight: 700; text-wrap: balance; }
+  .step { margin: 0; min-height: 22px; font-size: 15px; font-weight: 700; text-wrap: balance; }
   .step b { color: var(--c5); margin-right: 5px; }
-  .step small { font-weight: 500; color: var(--muted); font-size: 12px; margin-left: 4px; }
+  .step small { font-weight: 500; color: var(--muted); font-size: 13px; margin-left: 4px; }
 
   .tray { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .tray.single { grid-template-columns: 1fr; }
@@ -211,8 +213,8 @@
   button.slot { cursor: pointer; transition: transform 90ms ease; }
   button.slot:active { transform: scale(0.96); }
   .sizecard { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .sizecard b { font-family: "Baloo 2", system-ui, sans-serif; font-size: 52px; font-weight: 800; line-height: 0.9; }
-  .sizecard .label { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .sizecard b { font-family: "Baloo 2", system-ui, sans-serif; font-size: 42px; font-weight: 800; line-height: 0.9; }
+  .sizecard .label { font-size: 14px; font-weight: 700; color: var(--muted); }
   .dots { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
   .dots i { width: 12px; height: 12px; border-radius: 3px; }
   .slot.enter { animation: enter 220ms ease-out both; }
@@ -235,17 +237,17 @@
   }
   .drag i { border-radius: 5px; }
   .slot.nofit { grid-template-rows: 1fr auto; }
-  .tag { font-size: 11px; color: var(--muted); }
-  .sizecard .pts { font-size: 12px; font-weight: 700; color: var(--c3); }
+  .tag { font-size: 13px; color: var(--muted); }
+  .sizecard .pts { font-size: 13px; font-weight: 700; color: var(--c3); }
   .ptag {
     position: absolute; right: 8px; bottom: 6px;
-    font-size: 11px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums;
+    font-size: 12px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums;
   }
   .ptag.tricky { color: #2B1D00; background: var(--c4); padding: 1px 7px; border-radius: 99px; }
   .holdstar { position: absolute; left: 4px; bottom: 2px; font-size: 11px; color: var(--c4); }
 
   .status { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; }
-  .status p { margin: 0; font-size: 13px; color: var(--muted); }
+  .status p { margin: 0; font-size: 14px; color: var(--muted); }
   .status p.ok { color: var(--c3); font-weight: 700; }
   .status p.bad { color: var(--bad); font-weight: 700; }
   .plainbtn {
@@ -341,8 +343,9 @@
   .legal a { color: var(--muted); }
 
   /* ---- Hold slots ---- */
-  .holdbar { display: grid; grid-template-columns: auto repeat(var(--slots, 3), 1fr); gap: 8px; align-items: stretch; }
-  .holdlabel { display: flex; align-items: center; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+  /* 보관 칸은 위의 블록 카드(.tray)와 같은 줄·간격에 맞춘다. "📦 보관" 글자는 윗줄에 */
+  .holdbar { display: grid; grid-template-columns: repeat(var(--slots, 3), 1fr); gap: 6px 12px; align-items: stretch; }
+  .holdlabel { grid-column: 1 / -1; display: flex; align-items: center; font-size: 13px; font-weight: 700; color: var(--muted); white-space: nowrap; }
   .holdslot {
     position: relative; min-height: 66px; border-radius: 12px; padding: 5px; border: 0;
     background: var(--panel); display: grid; place-items: center; color: inherit;
@@ -352,7 +355,7 @@
   .holdslot.locked { cursor: pointer; font-size: 16px; }
   .holdslot.match { box-shadow: 0 0 0 3px var(--c3); }
   .holdslot.nofit .piece { opacity: 0.28; }
-  .holdslot .tag { font-size: 11px; color: var(--muted); }
+  .holdslot .tag { font-size: 13px; color: var(--muted); }
   .storebtn {
     position: absolute; top: 6px; left: 6px;
     width: 32px; height: 32px; border-radius: 50%; border: 0;
