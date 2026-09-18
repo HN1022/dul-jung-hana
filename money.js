@@ -17,11 +17,11 @@
 (() => {
   const CONFIG = {
     // ---- AdMob ----
-    // ⚠️ 지금은 구글 공식 "테스트 광고" ID. AdMob 계정 만들고 받은 실제 ID로 바꾸고 adsTesting 을 false 로.
-    //    (android/app/src/main/AndroidManifest.xml 의 APPLICATION_ID 도 같이 바꿀 것)
-    adsTesting: true,
-    bannerId: "ca-app-pub-3940256099942544/9214589741",
-    interstitialId: "ca-app-pub-3940256099942544/1033173712",
+    // 실제 AdMob ID (2026-09-18 적용). 내 폰에서 테스트할 때는 절대 광고를 누르지 말 것 — 무효 클릭.
+    //    앱 ID 는 android/app/src/main/AndroidManifest.xml 의 APPLICATION_ID 에 있다.
+    adsTesting: false,
+    bannerId: "ca-app-pub-4373923440824013/2784517335",
+    interstitialId: "ca-app-pub-4373923440824013/9158353992",
     interstitialEvery: 2,        // 게임오버 몇 번에 한 번 전면광고를 보여줄지
 
     // ---- Google Play 상품 ID (Play Console 에서 똑같은 ID 로 만들어야 함) ----
