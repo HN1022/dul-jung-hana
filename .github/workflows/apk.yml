@@ -64,11 +64,13 @@ jobs:
           node tools/build-web.mjs
           npx cap sync android
 
-      - name: APK 빌드
+      - name: APK(테스트용) + AAB(플레이스토어용) 빌드
         working-directory: android
+        env:
+          VERSION_CODE: ${{ github.run_number }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --console=plain
+          ./gradlew assembleDebug bundleRelease --console=plain
 
       - name: apk 브랜치에 올리기
         env:
@@ -77,6 +79,7 @@ jobs:
           SHORT=${GITHUB_SHA::7}
           mkdir out
           cp android/app/build/outputs/apk/debug/app-debug.apk out/dul-jung-hana-test.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab out/block-dilemma.aab
           cd out
           {
             echo "# 둘 중 하나 — 테스트용 APK"
@@ -84,6 +87,7 @@ jobs:
             echo "이 브랜치는 폰에 설치해볼 테스트 APK만 담아둡니다. main 에 코드를 올리면 GitHub 가 자동으로 새로 만들어 덮어씁니다."
             echo
             echo "- 다운로드: [dul-jung-hana-test.apk](https://github.com/${GITHUB_REPOSITORY}/raw/apk/dul-jung-hana-test.apk)"
+            echo "- 플레이스토어 업로드용: [block-dilemma.aab](https://github.com/${GITHUB_REPOSITORY}/raw/apk/block-dilemma.aab) (versionCode ${GITHUB_RUN_NUMBER})"
             echo "- 빌드한 코드: [${SHORT}](https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}) · $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M') (한국 시간)"
             echo "- 광고는 실제 AdMob ID 입니다. **자기 광고를 누르지 마세요.** 상점 상품은 Play Console 등록 전이라 \"준비 중\"으로 보입니다."
           } > README.md
