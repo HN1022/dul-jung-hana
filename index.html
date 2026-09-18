@@ -5,7 +5,7 @@
 
 <!-- 폰트는 fonts/ 안에 들어 있어서 인터넷 없이도 같은 모양으로 나온다.
      한글 문구를 새로 추가했으면 python tools/build-fonts.py 를 다시 돌릴 것. -->
-<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="fonts/fonts.css?v=7">
 
 <!-- 홈 화면에 추가했을 때 앱처럼 보이게 하는 설정들 -->
 <link rel="manifest" href="manifest.json">
@@ -482,10 +482,11 @@
     document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
   }
 </script>
-<script src="i18n.js"></script>
-<script src="money.js"></script>
-<script src="engine.js"></script>
-<script src="leaderboard.js"></script>
+<!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
+<script src="i18n.js?v=7"></script>
+<script src="money.js?v=7"></script>
+<script src="engine.js?v=7"></script>
+<script src="leaderboard.js?v=7"></script>
 <script>
 (() => {
   const N = 8;

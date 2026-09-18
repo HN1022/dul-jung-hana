@@ -272,9 +272,11 @@
     root = root || document;
     document.documentElement.lang = lang;
     document.title = t("doc_title");
-    root.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
-    root.querySelectorAll("[data-i18n-html]").forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml); });
-    root.querySelectorAll("[data-i18n-aria]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.i18nAria)); });
+    // 번역이 없는 키면(파일이 옛날 것이거나 빠뜨렸을 때) HTML 에 적힌 기본 문구를 그대로 둔다
+    const has = (k) => D[lang][k] != null || D.ko[k] != null;
+    root.querySelectorAll("[data-i18n]").forEach((el) => { if (has(el.dataset.i18n)) el.textContent = t(el.dataset.i18n); });
+    root.querySelectorAll("[data-i18n-html]").forEach((el) => { if (has(el.dataset.i18nHtml)) el.innerHTML = t(el.dataset.i18nHtml); });
+    root.querySelectorAll("[data-i18n-aria]").forEach((el) => { if (has(el.dataset.i18nAria)) el.setAttribute("aria-label", t(el.dataset.i18nAria)); });
   }
 
   function setLang(next) {
