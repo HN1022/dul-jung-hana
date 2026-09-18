@@ -40,7 +40,17 @@ service cloud.firestore {
       return d.keys().hasOnly(['uid', 'name', 'score', 'mode', 'level', 'turns', 'seed', 'slots', 'v', 'log', 'status', 'at', 'season'])
         && d.keys().hasAll(['uid', 'name', 'score', 'mode', 'level', 'turns', 'seed', 'slots', 'v', 'log', 'status', 'at', 'season'])
         && d.season == seasonNow()
-        && d.uid == request.auth.uid
+        && validCore(d);
+    }
+    // 시즌 도입 전 앱(1.0.17 등 — 비공개 테스트가 한동안 이 버전)이 올리는 모양: season 없음, id = uid_모드_난이도.
+    // 받아 두면 밤 검증(tools/verify-scores.mjs)이 올린 달의 시즌 문서로 옮긴다. 옛 앱이 다 사라지면 지워도 됨.
+    function validLegacy(d) {
+      return d.keys().hasOnly(['uid', 'name', 'score', 'mode', 'level', 'turns', 'seed', 'slots', 'v', 'log', 'status', 'at'])
+        && d.keys().hasAll(['uid', 'name', 'score', 'mode', 'level', 'turns', 'seed', 'slots', 'v', 'log', 'status', 'at'])
+        && validCore(d);
+    }
+    function validCore(d) {
+      return d.uid == request.auth.uid
         && d.name is string && d.name.size() >= 2 && d.name.size() <= 10
         && !claimedByOther(d.name)
         && d.mode in ['35', '16']
@@ -66,10 +76,18 @@ service cloud.firestore {
         + '_' + request.resource.data.season;
     }
 
+    function legacyId(id) {
+      return id == request.auth.uid + '_' + request.resource.data.mode + '_' + string(request.resource.data.level);
+    }
+    function validWrite(id) {
+      return request.auth != null
+        && ((ownId(id) && validScore(request.resource.data)) || (legacyId(id) && validLegacy(request.resource.data)));
+    }
+
     match /scores/{id} {
       allow read: if true;
-      allow create: if request.auth != null && ownId(id) && validScore(request.resource.data);
-      allow update: if request.auth != null && ownId(id) && validScore(request.resource.data)
+      allow create: if validWrite(id);
+      allow update: if validWrite(id)
         && request.resource.data.score > resource.data.score
         && request.time > resource.data.at + duration.value(10, 's');
       allow delete: if isAdmin();

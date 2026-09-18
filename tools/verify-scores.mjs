@@ -23,7 +23,7 @@ const Engine = box.Engine;
 
 const db = new Firestore({ projectId: PROJECT });
 
-// 시즌 도입(2026-09) 전에 올라온 기록: 문서 id 에 시즌이 없다 → 올린 날짜(한국 시간)의 시즌으로 옮긴다. 한 번 옮기면 끝.
+// 시즌 없는 기록(시즌 도입 전 앱이 올린 것): 문서 id 에 시즌이 없다 → 올린 날짜(한국 시간)의 시즌으로 옮긴다.
 const seasonOf = (date) => new Date(date.getTime() + 9 * 3600e3).toISOString().slice(0, 7);
 let moved = 0;
 for (const doc of (await db.collection("scores").get()).docs) {
@@ -31,7 +31,10 @@ for (const doc of (await db.collection("scores").get()).docs) {
   if (d.season) continue;
   const season = seasonOf(d.at && d.at.toDate ? d.at.toDate() : new Date());
   if (!DRY) {
-    await db.collection("scores").doc(`${doc.id}_${season}`).set({ ...d, season });
+    // 같은 사람·순위표·시즌에 새 앱으로 올린 기록이 이미 있으면 더 높은 점수만 남긴다
+    const target = db.collection("scores").doc(`${doc.id}_${season}`);
+    const cur = await target.get();
+    if (!cur.exists || cur.data().score < d.score) await target.set({ ...d, season });
     await doc.ref.delete();
   }
   moved++;
