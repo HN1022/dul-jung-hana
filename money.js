@@ -193,7 +193,7 @@
       const b = e.target.closest("button");
       if (!b) return;
       if (b.dataset.buy) buy(b.dataset.buy);
-      else if (b.dataset.act === "close") shopEl.hidden = true;
+      else if (b.dataset.act === "close") { if (window.Nav && window.Nav.top() === "shop") window.Nav.back(); else shopEl.hidden = true; }
       else if (b.dataset.act === "restore") restore();
       else if (b.dataset.act === "manage" && Purchases) Purchases.manageSubscriptions().catch(() => {});
     });
@@ -220,6 +220,7 @@
     if (!shopEl) buildShop();
     shopMsg = "";
     renderShop();
+    if (shopEl.hidden && window.Nav) window.Nav.push("shop", () => { shopEl.hidden = true; });
     shopEl.hidden = false;
     loadProducts();
   }

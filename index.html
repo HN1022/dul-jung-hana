@@ -5,7 +5,7 @@
 
 <!-- 폰트는 fonts/ 안에 들어 있어서 인터넷 없이도 같은 모양으로 나온다.
      한글 문구를 새로 추가했으면 python tools/build-fonts.py 를 다시 돌릴 것. -->
-<link rel="stylesheet" href="fonts/fonts.css?v=7">
+<link rel="stylesheet" href="fonts/fonts.css?v=8">
 
 <!-- 홈 화면에 추가했을 때 앱처럼 보이게 하는 설정들 -->
 <link rel="manifest" href="manifest.json">
@@ -44,14 +44,18 @@
       --bg: #0F151B; --ink: #E5ECF2; --muted: #8B9CAB; --panel: #19222B;
       --board: #1A232C; --cell: #26313C; --cell-hover: #33404C; --btn: #E5ECF2; --btn-ink: #0F151B;
       --overlay: rgba(10, 14, 18, 0.86);
+      --stone: #97A3AF;
     }
   }
   :root[data-theme="dark"] {
     --bg: #0F151B; --ink: #E5ECF2; --muted: #8B9CAB; --panel: #19222B;
     --board: #1A232C; --cell: #26313C; --cell-hover: #33404C; --btn: #E5ECF2; --btn-ink: #0F151B;
     --overlay: rgba(10, 14, 18, 0.86);
+      --stone: #97A3AF;
   }
 
+  /* 이 페이지는 다크 모드를 직접 지원한다 → 브라우저의 "웹페이지 강제로 어둡게"가 블록 색을 바꾸지 않게 */
+  :root { color-scheme: light dark; }
   html, body { height: 100%; }
   body {
     background: var(--bg);
@@ -481,12 +485,25 @@
   for (const ev of ["gesturestart", "gesturechange", "gestureend", "dblclick", "contextmenu"]) {
     document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
   }
+
+  // 뒤로가기: 화면(게임·순위표·상점)을 열 때 브라우저 기록을 한 칸 쌓고, 뒤로가기를 누르면 가장 위 화면을 닫는다.
+  // 폰 웹은 브라우저 뒤로가기, 안드로이드 앱은 MainActivity.java 가 WebView 기록을 따라가게 해서 같은 방식으로 동작.
+  // 닫을 화면이 없을 때(시작 화면)만 브라우저가 페이지를 떠나거나 앱이 꺼진다.
+  window.Nav = (() => {
+    const stack = [];
+    window.addEventListener("popstate", () => { const top = stack.pop(); if (top) top.close(); });
+    return {
+      push(name, close) { stack.push({ name, close }); history.pushState({ nav: name, depth: stack.length }, ""); },
+      back() { if (stack.length) history.back(); },
+      top: () => (stack.length ? stack[stack.length - 1].name : null),
+    };
+  })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="i18n.js?v=7"></script>
-<script src="money.js?v=7"></script>
-<script src="engine.js?v=7"></script>
-<script src="leaderboard.js?v=7"></script>
+<script src="i18n.js?v=8"></script>
+<script src="money.js?v=8"></script>
+<script src="engine.js?v=8"></script>
+<script src="leaderboard.js?v=8"></script>
 <script>
 (() => {
   const N = 8;
@@ -1116,7 +1133,7 @@
       <div class="row"><button class="btn soft" type="button" data-act="menu">${t("menu")}</button><button class="btn" type="button" data-act="again">${t("again")}</button></div>`;
     // 결과 화면에서 넘어가는 순간이 전면광고 자리 (몇 판에 한 번인지는 money.js)
     o.querySelector('[data-act="again"]').addEventListener("click", () => { Money && Money.maybeInterstitial(); newGame(); });
-    o.querySelector('[data-act="menu"]').addEventListener("click", () => { Money && Money.maybeInterstitial(); o.remove(); openStart(); });
+    o.querySelector('[data-act="menu"]').addEventListener("click", () => { Money && Money.maybeInterstitial(); o.remove(); goMenu(); });
     stage.appendChild(o);
     renderOverRank(o.querySelector("#overRank"));
     o.querySelector('[data-act="again"]').focus();
@@ -1215,6 +1232,7 @@
     if (!Board) return;
     rankTab = tab || "all";
     rankEditing = false;
+    if (rankModal.hidden) Nav.push("rank", () => { rankModal.hidden = true; });
     rankModal.hidden = false;
     renderRankName();
     rankRows = null;
@@ -1223,7 +1241,7 @@
       Board.top(200).then((rows) => { rankRows = rows; }).catch(() => { rankRows = "offline"; }).finally(renderRankList);
     });
   }
-  $("rankClose").addEventListener("click", () => { rankModal.hidden = true; });
+  $("rankClose").addEventListener("click", () => { if (Nav.top() === "rank") Nav.back(); else rankModal.hidden = true; });
   document.querySelectorAll("#rankTabs button").forEach((b) => b.addEventListener("click", () => { rankTab = b.dataset.tab; renderRankList(); }));
   $("startRank").addEventListener("click", () => openRank("all"));
   if (!Board) $("startRank").hidden = true;
@@ -1331,19 +1349,24 @@
     syncMeta();
     newGame();
     save();
+    enterGame();
   });
   $("startResume").addEventListener("click", () => {
     applyPicks();
     restore(store.get(slotKey()));
     save();
+    enterGame();
   });
+  // 게임 화면 = 뒤로가기 한 칸. 뒤로가기(또는 ☰ 메뉴)를 누르면 시작 화면으로.
+  function enterGame() { if (Nav.top() !== "game") Nav.push("game", () => openStart()); }
+  function goMenu() { if (Nav.top() === "game") Nav.back(); else openStart(); }
   if (Money && Money.isApp) {
     $("startShop").hidden = false;
     $("startShop").addEventListener("click", () => Money.openShop());
   }
   $("menuBtn").addEventListener("click", () => {
     if (drag || paint || phase === "anim") return;
-    openStart();
+    goMenu();
   });
 
   // ---- Language ----

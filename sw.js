@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v7";   // v7: 코드·문구도 네트워크 먼저(옛 i18n.js 가 남아 rank_btn 같은 이름표가 보이던 문제)
+const VERSION = "v8";   // v8: 뒤로가기(Nav), 다크 모드 강제 어둡게 방지
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
