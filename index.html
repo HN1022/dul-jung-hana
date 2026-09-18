@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light dark only">
 <title>둘 중 하나</title>
 
 <!-- 폰트는 fonts/ 안에 들어 있어서 인터넷 없이도 같은 모양으로 나온다.
      한글 문구를 새로 추가했으면 python tools/build-fonts.py 를 다시 돌릴 것. -->
-<link rel="stylesheet" href="fonts/fonts.css?v=8">
+<link rel="stylesheet" href="fonts/fonts.css?v=9">
 
 <!-- 홈 화면에 추가했을 때 앱처럼 보이게 하는 설정들 -->
 <link rel="manifest" href="manifest.json">
@@ -38,24 +38,28 @@
     --bad: #FF4D5E;
     --flash: #FFFFFF;
     --stone: #7C8793;
+    --cell-line: rgba(27, 39, 51, 0.06);   /* 빈 칸 테두리 (다크 모드에서 칸 구분이 보이게) */
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #0F151B; --ink: #E5ECF2; --muted: #8B9CAB; --panel: #19222B;
-      --board: #1A232C; --cell: #26313C; --cell-hover: #33404C; --btn: #E5ECF2; --btn-ink: #0F151B;
+      --board: #151D25; --cell: #2B3844; --cell-hover: #384654; --btn: #E5ECF2; --btn-ink: #0F151B;
       --overlay: rgba(10, 14, 18, 0.86);
-      --stone: #97A3AF;
+      --stone: #A3AEB9;
+      --cell-line: rgba(255, 255, 255, 0.10);
     }
   }
   :root[data-theme="dark"] {
     --bg: #0F151B; --ink: #E5ECF2; --muted: #8B9CAB; --panel: #19222B;
-    --board: #1A232C; --cell: #26313C; --cell-hover: #33404C; --btn: #E5ECF2; --btn-ink: #0F151B;
+    --board: #151D25; --cell: #2B3844; --cell-hover: #384654; --btn: #E5ECF2; --btn-ink: #0F151B;
     --overlay: rgba(10, 14, 18, 0.86);
-      --stone: #97A3AF;
+      --stone: #A3AEB9;
+      --cell-line: rgba(255, 255, 255, 0.10);
   }
 
-  /* 이 페이지는 다크 모드를 직접 지원한다 → 브라우저의 "웹페이지 강제로 어둡게"가 블록 색을 바꾸지 않게 */
-  :root { color-scheme: light dark; }
+  /* 이 페이지는 다크 모드를 직접 지원한다 → 브라우저의 "웹페이지 강제로 어둡게"가 블록 색을 바꾸지 않게.
+     only = 표준의 "강제로 바꾸지 마" 신호. 삼성 인터넷은 이것도 무시할 때가 있어서 아래 안내 문구(samsungTip)도 있다. */
+  :root { color-scheme: light dark only; }
   html, body { height: 100%; }
   body {
     background: var(--bg);
@@ -141,7 +145,7 @@
   }
   .board.shake { animation: shake 320ms ease-out; }
   @keyframes shake { 20% { transform: translate(-4px, 2px); } 40% { transform: translate(4px, -2px); } 60% { transform: translate(-2px, 1px); } 80% { transform: translate(2px, 0); } }
-  .cell { background: var(--cell); border-radius: 5px; position: relative; }
+  .cell { background: var(--cell); border-radius: 5px; position: relative; box-shadow: inset 0 0 0 1px var(--cell-line); }
   .cell[data-c="1"], .blk.c1 { background: var(--c1); }
   .cell[data-c="2"], .blk.c2 { background: var(--c2); }
   .cell[data-c="3"], .blk.c3 { background: var(--c3); }
@@ -178,9 +182,10 @@
     padding: 3px 9px; border-radius: 99px; background: var(--panel); color: var(--muted);
   }
   .warn.soon { background: var(--bad); color: #fff; animation: pulse 0.9s ease-in-out infinite; }
-  .cell[data-c="9"] {
+  .board .cell[data-c="9"] {   /* .board 를 붙여 위의 공통 블록 그림자보다 우선 */
     background-color: var(--stone);
-    background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.16) 0 3px, transparent 3px 7px);
+    background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.22) 0 3px, transparent 3px 7px);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25);
   }
   .cell.garbage-in { z-index: 2; animation: thud 320ms cubic-bezier(0.3, 0, 0.6, 1.4); }
   @keyframes thud { 0% { transform: scale(1.8); opacity: 0; } 60% { transform: scale(0.92); opacity: 1; } 100% { transform: scale(1); } }
@@ -272,6 +277,9 @@
   .rules { font-size: 12.5px; color: var(--muted); line-height: 1.65; margin: 0; }
   details.rules summary { cursor: pointer; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
   .legal { margin: 0; font-size: 12px; text-align: center; }
+  .tip { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--c4); }
+  .tip p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink); }
+  .tip .chip { flex: none; }
 
   /* ---- 순위표 ---- */
   .rank {
@@ -415,6 +423,10 @@
       <button type="button" class="chip" id="langBtn" data-i18n="lang_btn">🌐 English</button>
     </div>
     <p class="sub" data-i18n="sub">둘 중 하나를 골라 놓고, 가로 줄을 지우는 블록 퍼즐</p>
+    <div class="tip" id="samsungTip" hidden>
+      <p data-i18n-html="samsung_tip">삼성 인터넷 다크 모드 때문에 블록 색이 어둡게 보일 수 있어요. <b>설정 → Labs(실험실) → 웹사이트 다크 테마 사용</b>을 켜면 원래 색으로 보여요.</p>
+      <button type="button" class="chip" id="samsungTipClose" data-i18n="tip_close">알겠어요</button>
+    </div>
 
     <section>
       <h3 data-i18n="h_size">블록 크기</h3>
@@ -500,10 +512,10 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="i18n.js?v=8"></script>
-<script src="money.js?v=8"></script>
-<script src="engine.js?v=8"></script>
-<script src="leaderboard.js?v=8"></script>
+<script src="i18n.js?v=9"></script>
+<script src="money.js?v=9"></script>
+<script src="engine.js?v=9"></script>
+<script src="leaderboard.js?v=9"></script>
 <script>
 (() => {
   const N = 8;
@@ -1382,6 +1394,16 @@
   } else {
     $("langBtn").hidden = true;
   }
+
+  // 삼성 인터넷 다크 모드는 페이지 색을 억지로 어둡게 바꾼다(코드로 끌 방법이 없음) → 설정 방법 안내
+  (() => {
+    const tip = $("samsungTip");
+    const samsungDark = /SamsungBrowser/i.test(navigator.userAgent) && !window.Capacitor
+      && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
+    if (!samsungDark || store.get(KEY + "samsungTipSeen")) return;
+    tip.hidden = false;
+    $("samsungTipClose").addEventListener("click", () => { tip.hidden = true; store.set(KEY + "samsungTipSeen", true); });
+  })();
 
   function boot(data) {
     if (window.I18n) I18n.apply();

@@ -89,6 +89,8 @@
       again: "한 판 더",
 
       // 순위표
+      samsung_tip: "삼성 인터넷 다크 모드 때문에 블록 색이 어둡게 보일 수 있어요. <b>설정 → Labs(실험실) → 웹사이트 다크 테마 사용</b>을 켜면 원래 색으로 보여요.",
+      tip_close: "알겠어요",
       rank_btn: "🏆 순위표",
       rank_title: "순위표",
       rank_all: "전체",
@@ -210,6 +212,8 @@
       best_n: "Best {n}",
       again: "Play again",
 
+      samsung_tip: "Samsung Internet's dark mode can make the blocks look too dark. Turn on <b>Settings → Labs → Use website dark theme</b> to see the real colours.",
+      tip_close: "Got it",
       rank_btn: "🏆 Leaderboard",
       rank_title: "Leaderboard",
       rank_all: "All",

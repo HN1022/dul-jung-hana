@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v8";   // v8: 뒤로가기(Nav), 다크 모드 강제 어둡게 방지
+const VERSION = "v9";   // v9: 다크 모드 대비·삼성 인터넷 안내
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
