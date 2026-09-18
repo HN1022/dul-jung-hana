@@ -1,0 +1,102 @@
+# 테스트 APK 자동 빌드
+#
+# main 에 코드를 올릴 때마다 GitHub 서버가 안드로이드 테스트 APK 를 만들어서
+# apk 브랜치에 덮어쓴다. 다운로드 주소는 항상 같다:
+#   https://github.com/HN1022/dul-jung-hana/raw/apk/dul-jung-hana-test.apk
+#
+# 서명 키: android/app/ci-debug.keystore (테스트 전용, 비밀번호 android).
+#   처음 실행할 때 없으면 여기서 만들어 저장소에 올린다. 한 번 만들어지면 계속 같은 키로
+#   서명하므로 폰에 깔린 앱 위에 그대로 업데이트된다. 집 PC 의 `npm run apk` 도 이 키를 쓴다
+#   (android/app/build.gradle 의 signingConfigs.debug).
+#   ⚠️ 플레이스토어 출시용 키가 아니다. 출시용 AAB 는 별도의 업로드 키로 서명할 것.
+#
+# 손으로 돌리려면: GitHub 저장소 → Actions → "테스트 APK 빌드" → Run workflow
+name: 테스트 APK 빌드
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: 테스트 서명 키 준비 (처음 한 번만 만들고 저장소에 올림)
+        run: |
+          KS=android/app/ci-debug.keystore
+          if [ ! -f "$KS" ]; then
+            keytool -genkeypair -keystore "$KS" -storetype PKCS12 \
+              -storepass android -keypass android -alias androiddebugkey \
+              -dname "CN=Always One Test, O=Always One, C=KR" \
+              -keyalg RSA -keysize 2048 -validity 10000
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -f "$KS"
+            git commit -m "CI: 테스트 APK 서명 키 생성 (이후 모든 테스트 빌드가 이 키로 서명됨)"
+            git push
+          fi
+
+      - name: 패키지 설치
+        run: npm ci
+
+      - name: 웹 파일 모으기 + 안드로이드 동기화
+        run: |
+          node tools/build-web.mjs
+          npx cap sync android
+
+      - name: APK 빌드
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --console=plain
+
+      - name: apk 브랜치에 올리기
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHORT=${GITHUB_SHA::7}
+          mkdir out
+          cp android/app/build/outputs/apk/debug/app-debug.apk out/dul-jung-hana-test.apk
+          cd out
+          {
+            echo "# 둘 중 하나 — 테스트용 APK"
+            echo
+            echo "이 브랜치는 폰에 설치해볼 테스트 APK만 담아둡니다. main 에 코드를 올리면 GitHub 가 자동으로 새로 만들어 덮어씁니다."
+            echo
+            echo "- 다운로드: [dul-jung-hana-test.apk](https://github.com/${GITHUB_REPOSITORY}/raw/apk/dul-jung-hana-test.apk)"
+            echo "- 빌드한 코드: [${SHORT}](https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}) · $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M') (한국 시간)"
+            echo "- 광고는 실제 AdMob ID 입니다. **자기 광고를 누르지 마세요.** 상점 상품은 Play Console 등록 전이라 \"준비 중\"으로 보입니다."
+          } > README.md
+          git init -q -b apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -qm "테스트 APK (${SHORT})"
+          git push -qf "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" apk
+
+      - name: 빌드 결과 보관 (Actions 화면에서도 받을 수 있게)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dul-jung-hana-test-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14

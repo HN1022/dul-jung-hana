@@ -16,6 +16,20 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // 테스트 APK 는 어느 PC·GitHub 에서 빌드해도 같은 키로 서명한다 → 폰에 깔린 앱 위에 그대로 업데이트됨.
+    // 키는 GitHub 자동 빌드(.github/workflows/apk.yml)가 처음에 만들어 저장소에 올린다.
+    // ⚠️ 테스트 전용. 플레이스토어 출시용 서명에는 쓰지 말 것.
+    signingConfigs {
+        debug {
+            def ciKey = file('ci-debug.keystore')
+            if (ciKey.exists()) {
+                storeFile ciKey
+                storePassword 'android'
+                keyAlias 'androiddebugkey'
+                keyPassword 'android'
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
