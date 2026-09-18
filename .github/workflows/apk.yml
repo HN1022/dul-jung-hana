@@ -57,7 +57,8 @@ jobs:
           fi
 
       - name: 패키지 설치
-        run: npm ci
+        # 이 PC 에 node 가 없어 package-lock.json 을 못 고칠 때도 있어서 npm install (lock 과 다르면 여기서 맞춘다)
+        run: npm install --no-audit --no-fund
 
       - name: 웹 파일 모으기 + 안드로이드 동기화
         run: |

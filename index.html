@@ -516,10 +516,10 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="i18n.js?v=13"></script>
+<script src="i18n.js?v=14"></script>
 <script src="money.js?v=13"></script>
 <script src="engine.js?v=13"></script>
-<script src="leaderboard.js?v=13"></script>
+<script src="leaderboard.js?v=14"></script>
 <script>
 (() => {
   const N = 8;
@@ -1306,14 +1306,50 @@
     });
     return gisLoading;
   }
+  let socialReady = null;
+  // 구글이 준 ID 토큰으로 순위표 계정에 연동 (웹·앱 공통)
+  async function linkWith(idToken) {
+    renderRankGoogle({ cls: "", text: t("google_linking") });
+    try {
+      const r = await Board.linkGoogle(idToken);
+      renderRankName();
+      renderRankGoogle(r.switched ? { cls: "ok", text: t("google_switched") }
+        : r.nameTaken ? { cls: "err", text: t("name_err_taken") } : null);
+      Board.top(200).then((rows) => { rankRows = rows; renderRankList(); }).catch(() => {});
+    } catch (e) {
+      renderRankGoogle({ cls: "err", text: t("google_err") });
+    }
+  }
   function renderRankGoogle(msg) {
     const box = $("rankGoogle");
     if (!Board) { box.hidden = true; return; }
     const g = Board.googleInfo();
-    if (window.Capacitor) { box.innerHTML = `<p>${t("google_app_later")}</p>`; return; }
     if (g) {
       const email = String(g.email || "").replace(/^(.{2}).*(@.*)$/, "$1***$2");
       box.innerHTML = `<p class="ok">🛡 ${t("google_linked")}</p><p>${esc(email)}</p>${msg ? `<p class="${msg.cls}">${esc(msg.text)}</p>` : ""}`;
+      return;
+    }
+    // 안드로이드 앱: 웹용 구글 버튼(GIS)은 앱 안 WebView 에서 막혀 있어서, 폰의 구글 로그인 창(Credential Manager)을 쓴다
+    const social = window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins.SocialLogin;
+    if (social) {
+      box.innerHTML = `<p>${t("google_desc")}</p><button type="button" class="btn small" id="gBtn">G&nbsp; ${t("google_btn")}</button>${msg ? `<p class="${msg.cls}">${esc(msg.text)}</p>` : ""}`;
+      $("gBtn").addEventListener("click", async () => {
+        let idToken = null;
+        try {
+          if (!socialReady) socialReady = social.initialize({ google: { webClientId: Board.GOOGLE_CLIENT_ID } });
+          await socialReady;
+          const r = await social.login({ provider: "google", options: { scopes: ["email", "profile"] } });
+          idToken = r && r.result && r.result.idToken;
+        } catch (e) {
+          socialReady = null;
+          // 사용자가 창을 닫은 건 오류로 보여 주지 않는다
+          // 원인을 알 수 있게 오류 내용을 짧게 붙인다(설정 문제면 "28444 Developer console…" 등)
+          const why = String((e && (e.message || e.code)) || e || "");
+          if (!/cancel/i.test(why)) renderRankGoogle({ cls: "err", text: t("google_err") + " (" + why.slice(0, 80) + ")" });
+          return;
+        }
+        if (idToken) linkWith(idToken);
+      });
       return;
     }
     box.innerHTML = `<p>${t("google_desc")}</p><div id="gisBtn"></div>${msg ? `<p class="${msg.cls}">${esc(msg.text)}</p>` : ""}`;
@@ -1321,18 +1357,7 @@
       google.accounts.id.initialize({
         client_id: Board.GOOGLE_CLIENT_ID,
         ux_mode: "popup",
-        callback: async (resp) => {
-          renderRankGoogle({ cls: "", text: t("google_linking") });
-          try {
-            const r = await Board.linkGoogle(resp.credential);
-            renderRankName();
-            renderRankGoogle(r.switched ? { cls: "ok", text: t("google_switched") }
-              : r.nameTaken ? { cls: "err", text: t("name_err_taken") } : null);
-            Board.top(200).then((rows) => { rankRows = rows; renderRankList(); }).catch(() => {});
-          } catch (e) {
-            renderRankGoogle({ cls: "err", text: t("google_err") });
-          }
-        },
+        callback: (resp) => linkWith(resp.credential),
       });
       const holder = $("gisBtn");
       if (holder) google.accounts.id.renderButton(holder, {

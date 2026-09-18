@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v13";   // v13: 이어하기(규칙 버전 2)
+const VERSION = "v14";   // v14: 앱 구글 로그인
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
