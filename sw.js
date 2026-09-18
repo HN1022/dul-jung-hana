@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v11";   // v11: 이름 변경 — 블록 딜레마 / Block Dilemma
+const VERSION = "v12";   // v12: 삼성 인터넷 안내 문구 제거
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [

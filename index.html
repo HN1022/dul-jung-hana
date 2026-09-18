@@ -5,7 +5,7 @@
 
 <!-- 폰트는 fonts/ 안에 들어 있어서 인터넷 없이도 같은 모양으로 나온다.
      한글 문구를 새로 추가했으면 python tools/build-fonts.py 를 다시 돌릴 것. -->
-<link rel="stylesheet" href="fonts/fonts.css?v=11">
+<link rel="stylesheet" href="fonts/fonts.css?v=12">
 
 <!-- 홈 화면에 추가했을 때 앱처럼 보이게 하는 설정들 -->
 <link rel="manifest" href="manifest.json">
@@ -58,7 +58,7 @@
   }
 
   /* 이 페이지는 다크 모드를 직접 지원한다 → 브라우저의 "웹페이지 강제로 어둡게"가 블록 색을 바꾸지 않게.
-     only = 표준의 "강제로 바꾸지 마" 신호. 삼성 인터넷은 이것도 무시할 때가 있어서 아래 안내 문구(samsungTip)도 있다. */
+     only = 표준의 "강제로 바꾸지 마" 신호. (삼성 인터넷은 무시하지만 갤럭시는 앱을 쓰기로 함) */
   :root { color-scheme: light dark only; }
   /* hidden 속성은 항상 숨김 — display 를 준 요소(.tip 등)에서도. 없으면 삼성 안내가 모두에게 보였다 */
   [hidden] { display: none !important; }
@@ -279,9 +279,6 @@
   .rules { font-size: 12.5px; color: var(--muted); line-height: 1.65; margin: 0; }
   details.rules summary { cursor: pointer; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
   .legal { margin: 0; font-size: 12px; text-align: center; }
-  .tip { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--c4); }
-  .tip p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink); }
-  .tip .chip { flex: none; }
 
   /* ---- 순위표 ---- */
   .rank {
@@ -430,10 +427,6 @@
       <button type="button" class="chip" id="langBtn" data-i18n="lang_btn">🌐 English</button>
     </div>
     <p class="sub" data-i18n="sub">두 개의 블록, 하나의 선택. 골라 놓고 가로줄을 지우는 퍼즐</p>
-    <div class="tip" id="samsungTip" hidden>
-      <p data-i18n-html="samsung_tip">삼성 인터넷 다크 모드 때문에 블록 색이 어둡게 보일 수 있어요. <b>설정 → Labs(실험실) → 웹사이트 다크 테마 사용</b>을 켜면 원래 색으로 보여요.</p>
-      <button type="button" class="chip" id="samsungTipClose" data-i18n="tip_close">알겠어요</button>
-    </div>
 
     <section>
       <h3 data-i18n="h_size">블록 크기</h3>
@@ -520,10 +513,10 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="i18n.js?v=11"></script>
-<script src="money.js?v=11"></script>
-<script src="engine.js?v=11"></script>
-<script src="leaderboard.js?v=11"></script>
+<script src="i18n.js?v=12"></script>
+<script src="money.js?v=12"></script>
+<script src="engine.js?v=12"></script>
+<script src="leaderboard.js?v=12"></script>
 <script>
 (() => {
   const N = 8;
@@ -1452,16 +1445,6 @@
   } else {
     $("langBtn").hidden = true;
   }
-
-  // 삼성 인터넷 다크 모드는 페이지 색을 억지로 어둡게 바꾼다(코드로 끌 방법이 없음) → 설정 방법 안내
-  (() => {
-    const tip = $("samsungTip");
-    const samsungDark = /SamsungBrowser/i.test(navigator.userAgent) && !window.Capacitor
-      && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
-    if (!samsungDark || store.get(KEY + "samsungTipSeen")) return;
-    tip.hidden = false;
-    $("samsungTipClose").addEventListener("click", () => { tip.hidden = true; store.set(KEY + "samsungTipSeen", true); });
-  })();
 
   function boot(data) {
     if (window.I18n) I18n.apply();
