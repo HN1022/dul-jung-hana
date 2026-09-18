@@ -62,6 +62,7 @@
     user-select: none; -webkit-user-select: none;
     /* 두 번 두드렸을 때 화면이 확대되지 않게 한다. 보드는 touch-action: none 으로 따로 막혀 있다. */
     touch-action: manipulation;
+    -webkit-touch-callout: none;   /* 아이폰에서 길게 누르면 뜨는 메뉴 막기 */
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
@@ -415,7 +416,8 @@
 <script>
   // 확대 막기: 사파리는 user-scalable=no 를 무시하므로 두 손가락 확대(gesture*)와
   // 두 번 두드리기(dblclick)를 직접 막는다. 한 손가락 조작은 그대로 동작한다.
-  for (const ev of ["gesturestart", "gesturechange", "gestureend", "dblclick"]) {
+  // 우클릭 메뉴(contextmenu)도 막는다 — PC 에서 오른쪽 버튼, 폰에서 길게 누르면 뜨는 메뉴.
+  for (const ev of ["gesturestart", "gesturechange", "gestureend", "dblclick", "contextmenu"]) {
     document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
   }
 </script>
