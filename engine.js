@@ -14,7 +14,14 @@
  */
 (function (root) {
   "use strict";
-  const VERSION = 1;
+  // 규칙 버전. 1 = 처음 규칙, 2 = 이어하기 추가(그 외 규칙은 1 과 같음).
+  // 검증기는 SUPPORTED 에 있는 버전을 모두 다시 돌릴 수 있다(판마다 st.v 에 그 판의 버전이 남는다).
+  const VERSION = 2;
+  const SUPPORTED = [1, 2];
+  // 이어하기: 게임오버(놓을 곳 없음) 때 빈칸에 1~3칸을 직접 그려서 놓고 계속한다. 한 판에 1번.
+  // (하루 2번 제한과 광고는 화면·money.js 가 맡는다 — 규칙 쪽은 "판당 1번"만 지킨다)
+  const REVIVE_PER_GAME = 1;
+  const REVIVE_MAX_CELLS = 3;
   const N = 8;
   const MODES = { "35": { min: 3, max: 5 }, "16": { min: 1, max: 6 } };
   // 방해 블록: every 턴마다 count 칸. mult = 점수 배율
@@ -193,7 +200,8 @@
     const seed = (opts.seed == null ? newSeed() : opts.seed) >>> 0;
     const slots = opts.slots === 1 ? 1 : 2;
     const st = {
-      v: VERSION, mode, level, seed, rng: seed | 0,
+      v: SUPPORTED.indexOf(opts.v) >= 0 ? opts.v : VERSION, mode, level, seed, rng: seed | 0,
+      revives: 0,
       slots, slots0: slots,   // slots0 = 시작할 때 보관 칸 수(리플레이의 시작 조건)
       board: Array(N * N).fill(0),
       score: 0, streak: 0, turn: 0, turnsLeft: LEVELS[level].every,
@@ -203,7 +211,7 @@
     return st;
   }
   // 검증기에 넘길 시작 조건
-  const metaOf = (st) => ({ v: st.v, mode: st.mode, level: st.level, seed: st.seed, slots: st.slots0 || st.slots });
+  const metaOf = (st) => ({ v: st.v || 1, mode: st.mode, level: st.level, seed: st.seed, slots: st.slots0 || st.slots });
 
   function drawSizes(st) {
     const { min, max } = MODES[st.mode];
@@ -287,6 +295,55 @@
     return { p, placedIdx, gained, lines, streak: st.streak, clearIdx: idx, falls, boardPlaced, boardCleared, garbage, turn: st.turn };
   }
 
+  // 이어하기 (규칙 버전 2부터). 게임오버 상태에서 빈칸에 1~3칸(가로·세로로 붙은 모양)을 그려 놓는다.
+  // 블록 점수는 없고, 줄을 지우면 줄 점수는 평소처럼. 그다음은 한 턴이 끝난 것과 같다(방해 블록·새 크기 선택).
+  const canRevive = (st) => st.v >= 2 && st.phase === "over" && (st.revives || 0) < REVIVE_PER_GAME;
+  function connectedCells(cells) {
+    const key = (x, y) => x + "," + y;
+    const all = new Set(cells.map(([x, y]) => key(x, y)));
+    const seen = new Set([key(cells[0][0], cells[0][1])]);
+    const stack = [cells[0]];
+    while (stack.length) {
+      const [x, y] = stack.pop();
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const k = key(x + dx, y + dy);
+        if (all.has(k) && !seen.has(k)) { seen.add(k); stack.push([x + dx, y + dy]); }
+      }
+    }
+    return seen.size === all.size;
+  }
+  function revive(st, cells, ax, ay) {
+    if (!canRevive(st) || !cells || cells.length < 1 || cells.length > REVIVE_MAX_CELLS) return null;
+    const n = normalize(cells);
+    if (new Set(n.map((c) => c.join(","))).size !== n.length || !connectedCells(n)) return null;
+    const p = mk(n.length, n);
+    if (!fits(st.board, p, ax, ay)) return null;
+
+    st.log.push("v" + encodeCells(n) + "." + ax + ay);
+    st.revives = (st.revives || 0) + 1;
+    const placedIdx = p.cells.map(([x, y]) => (ay + y) * N + ax + x);
+    placedIdx.forEach((k) => { st.board[k] = p.size; });
+    const boardPlaced = st.board.slice();
+
+    let gained = 0;
+    const { lines, idx, rows } = fullRows(st.board);
+    let falls = [];
+    if (lines) {
+      st.streak++;
+      gained += 10 * lines * lines * st.streak;
+      const c = collapse(st.board, rows);
+      st.board = c.board;
+      falls = c.falls;
+    } else {
+      st.streak = 0;
+    }
+    gained = Math.round(gained * LEVELS[st.level].mult);
+    st.score += gained;
+    const boardCleared = st.board.slice();
+    const garbage = endTurn(st);
+    return { p, placedIdx, gained, lines, streak: st.streak, clearIdx: idx, falls, boardPlaced, boardCleared, garbage, turn: st.turn };
+  }
+
   // 보관: 그 턴은 아무것도 놓지 않고 넘어간다(방해 블록 턴은 흐른다).
   function store(st, i) {
     if (st.phase !== "shape" || !st.shapes[i] || st.held.length >= st.slots) return null;
@@ -339,8 +396,8 @@
   // meta = { v, mode, level, seed, slots }, log = st.log 과 같은 형식(배열 또는 ";" 로 이은 문자열)
   // → { ok, score, turn, error }
   function replay(meta, log) {
-    if (meta.v !== VERSION) return { ok: false, error: "version" };
-    const st = create({ mode: meta.mode, level: meta.level, seed: meta.seed, slots: meta.slots });
+    if (SUPPORTED.indexOf(meta.v) < 0) return { ok: false, error: "version" };
+    const st = create({ v: meta.v, mode: meta.mode, level: meta.level, seed: meta.seed, slots: meta.slots });
     const acts = Array.isArray(log) ? log : String(log || "").split(";").filter(Boolean);
     for (let k = 0; k < acts.length; k++) {
       const a = acts[k];
@@ -348,6 +405,11 @@
       if (a[0] === "c") ok = chooseSize(st, Number(a.slice(1)));
       else if (a[0] === "s") ok = !!store(st, Number(a.slice(1)));
       else if (a[0] === "k") { const n = Number(a.slice(1)); ok = n === 1 || n === 2; if (ok) setSlots(st, n); }
+      else if (a[0] === "v") {
+        const parts = a.slice(1).split(".");
+        const pos = parts[1] || "";
+        ok = pos.length === 2 && !!revive(st, decodeCells(parts[0] || ""), Number(pos[0]), Number(pos[1]));
+      }
       else if (a[0] === "p") {
         const parts = a.split(".");
         const from = parts[0][1], i = Number(parts[0].slice(2));
@@ -366,8 +428,8 @@
   const maxScore = (level, turns) => Math.ceil(LEVELS[level].mult * (32 * turns + 360 * turns * (turns + 1) / 2));
 
   const Engine = {
-    VERSION, N, MODES, LEVELS, GROWTH_TURNS,
-    create, chooseSize, place, store, setSlots, rotateItem, replay,
+    VERSION, SUPPORTED, N, MODES, LEVELS, GROWTH_TURNS, REVIVE_MAX_CELLS,
+    create, chooseSize, place, store, setSlots, rotateItem, replay, revive, canRevive,
     items, isStuck, fits, anyFit, fitsAnyRotation, fullRows,
     mk, normalize, rotate, rotations, blockPoints, isTricky, SIZE_POINTS,
     encodeCells, decodeCells, newSeed, maxScore, metaOf,

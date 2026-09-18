@@ -22,6 +22,8 @@
     adsTesting: false,
     bannerId: "ca-app-pub-4373923440824013/2784517335",
     interstitialId: "ca-app-pub-4373923440824013/9158353992",
+    // 이어하기 보상형 광고. ⚠️ 지금은 구글 공식 테스트 ID — AdMob 에 보상형 광고 단위를 만들면 실제 ID 로 바꿀 것
+    rewardedId: "ca-app-pub-3940256099942544/5224354917",
     interstitialEvery: 2,        // 게임오버 몇 번에 한 번 전면광고를 보여줄지
 
     // ---- Google Play 상품 ID (Play Console 에서 똑같은 ID 로 만들어야 함) ----
@@ -232,6 +234,18 @@
     onChange(fn) { listeners.push(fn); },
     openShop,
     gameEnded() { gamesSinceAd++; },
+    // 이어하기 전에 보상형 광고. 끝까지 보면 true, 광고가 안 뜨거나 닫으면 false.
+    async showRewarded() {
+      if (!AdMob || state.removeAds) return false;
+      try {
+        if (!adsStarted) await startAds();
+        await AdMob.prepareRewardVideoAd({ adId: CONFIG.rewardedId, isTesting: CONFIG.adsTesting });
+        const reward = await AdMob.showRewardVideoAd();
+        return !!reward;
+      } catch (e) {
+        return false;
+      }
+    },
     // 결과 화면에서 "한 판 더"/"메뉴"를 누를 때. 광고는 앱 위에 따로 뜨니 기다리지 않는다.
     maybeInterstitial() {
       if (!AdMob || state.removeAds || !interstitialReady) return;

@@ -5,7 +5,7 @@
 
 <!-- 폰트는 fonts/ 안에 들어 있어서 인터넷 없이도 같은 모양으로 나온다.
      한글 문구를 새로 추가했으면 python tools/build-fonts.py 를 다시 돌릴 것. -->
-<link rel="stylesheet" href="fonts/fonts.css?v=12">
+<link rel="stylesheet" href="fonts/fonts.css?v=13">
 
 <!-- 홈 화면에 추가했을 때 앱처럼 보이게 하는 설정들 -->
 <link rel="manifest" href="manifest.json">
@@ -275,6 +275,9 @@
   .overlay .big { font-family: "Baloo 2", system-ui, sans-serif; font-size: 56px; font-weight: 800; line-height: 1; }
   .overlay .new { color: var(--c4); font-weight: 700; }
   .overlay .btn { margin-top: 6px; }
+  .revivebox { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .revivebox .btn { background: var(--c3); color: #06261D; }
+  .revivebox small { font-size: 12px; opacity: 0.8; }
 
   .rules { font-size: 12.5px; color: var(--muted); line-height: 1.65; margin: 0; }
   details.rules summary { cursor: pointer; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
@@ -513,10 +516,10 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="i18n.js?v=12"></script>
-<script src="money.js?v=12"></script>
-<script src="engine.js?v=12"></script>
-<script src="leaderboard.js?v=12"></script>
+<script src="i18n.js?v=13"></script>
+<script src="money.js?v=13"></script>
+<script src="engine.js?v=13"></script>
+<script src="leaderboard.js?v=13"></script>
 <script>
 (() => {
   const N = 8;
@@ -702,7 +705,7 @@
     buildItems();
     tray.innerHTML = "";
     tray.classList.toggle("single", phase !== "size" && phase !== "anim" && shapes.length === 1);
-    boardEl.classList.toggle("drawing", phase === "shape" && control === "draw");
+    boardEl.classList.toggle("drawing", (phase === "shape" && control === "draw") || phase === "revive");
     const step = $("stepText");
 
     if (phase === "size" || phase === "anim") {
@@ -715,6 +718,16 @@
         b.addEventListener("click", () => chooseSize(s));
         tray.appendChild(b);
       });
+    } else if (phase === "revive") {
+      step.innerHTML = t("step_revive");
+      const panel = document.createElement("div");
+      panel.className = "status";
+      panel.innerHTML = `<p id="drawStatus"></p><div class="row">
+        <button type="button" class="btn small" id="clearDraw">${t("clear")}</button>
+        <button type="button" class="btn" id="reviveOk" disabled>${t("revive_place")}</button></div>`;
+      panel.querySelector("#clearDraw").addEventListener("click", () => { drawSet = new Set(); renderDraw(); });
+      panel.querySelector("#reviveOk").addEventListener("click", commitRevive);
+      tray.appendChild(panel);
     } else if (phase === "shape" || phase === "over") {
       const stuck = !items.some((it) => fitsAnyRotation(it.p));
       step.innerHTML = stuck
@@ -882,7 +895,7 @@
     const key = JSON.stringify(normalize(drawnPoints()));
     return items.findIndex((it) => it.p.size === drawSet.size && rotations(it.p).some((q) => q.key === key));
   }
-  const drawCap = () => items.reduce((m, it) => Math.max(m, it.p.size), 0);
+  const drawCap = () => (phase === "revive" ? E.REVIVE_MAX_CELLS : items.reduce((m, it) => Math.max(m, it.p.size), 0));
 
   // 칸 수는 다 채웠는데 모양이 틀린 그림: 손을 떼면 잠깐 빨갛게 흔들린 뒤 저절로 지워진다.
   let badTimer = null;
@@ -896,7 +909,7 @@
   }
 
   boardEl.addEventListener("pointerdown", (e) => {
-    if (phase !== "shape" || isStuck() || control !== "draw") return;
+    if (phase !== "revive" && (phase !== "shape" || isStuck() || control !== "draw")) return;
     if (badTimer) clearBadDrawing();   // 지워지기 전에 다시 그리기 시작하면 바로 지운다
     const i = cellAt(e.clientX, e.clientY);
     if (i < 0 || board[i]) return;
@@ -1025,6 +1038,21 @@
     clearPreview();
     tray.querySelectorAll(".slot.match").forEach((el) => el.classList.remove("match"));
     holdBar.querySelectorAll(".holdslot.match").forEach((el) => el.classList.remove("match"));
+    if (phase === "revive") {
+      const n = drawSet.size;
+      const ok = n >= 1 && n <= E.REVIVE_MAX_CELLS && connected(drawSet);
+      boardEl.style.setProperty("--gc", `var(--c${Math.max(1, n)})`);
+      drawSet.forEach((i) => cellEls[i].classList.add("ghost"));
+      if (ok) previewClear(n);
+      const st = $("drawStatus");
+      if (st) {
+        st.className = ok ? "ok" : "";
+        st.textContent = n === 0 ? t("revive_start") : !connected(drawSet) ? t("draw_apart") : t("revive_count", { n });
+      }
+      const b = $("reviveOk");
+      if (b) b.disabled = !ok;
+      return;
+    }
     if (phase !== "shape" || !items.length) return;
     const n = drawSet.size, cap = drawCap();
     const m = matchDraw();
@@ -1067,6 +1095,34 @@
   function place(p, ax, ay, item) {
     const res = item ? E.place(G, item.from, item.i, p.cells, ax, ay) : null;
     if (!res) { renderTray(false); return; }
+    showResult(res);
+  }
+
+  // ---- 이어하기: 하루 2번(이 기기 기준, 한국 날짜), 판당 1번은 엔진 규칙 ----
+  const REVIVE_PER_DAY = 2;
+  const reviveDayKey = () => KEY + "revive-" + new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  const revivesLeftToday = () => Math.max(0, REVIVE_PER_DAY - (store.get(reviveDayKey()) || 0));
+  function startRevive() {
+    stage.querySelector(".overlay")?.remove();
+    phase = "revive";
+    drawSet = new Set();
+    renderTray(false);
+  }
+  function commitRevive() {
+    if (phase !== "revive") return;
+    const pts = drawnPoints();
+    if (!pts.length) return;
+    const ax = Math.min(...pts.map((q) => q[0])), ay = Math.min(...pts.map((q) => q[1]));
+    const res = E.revive(G, pts, ax, ay);
+    if (!res) return;
+    store.set(reviveDayKey(), (store.get(reviveDayKey()) || 0) + 1);
+    drawSet = new Set();
+    clearPreview();
+    showResult(res);
+  }
+
+  // 한 수의 결과(엔진이 계산)를 애니메이션으로: 놓기 → 줄 지우기 → 내려오기 → 방해 블록 → 다음 턴
+  function showResult(res) {
     board = res.boardPlaced;
     renderBoard();
     res.placedIdx.forEach((i) => {
@@ -1132,6 +1188,12 @@
     save();
     setTimeout(showOver, delay);
   }
+  function reviveBox() {
+    if (!G || !E.canRevive(G) || revivesLeftToday() <= 0) return "";
+    const withAd = Money && Money.isApp && !Money.state.removeAds;
+    return `<div class="revivebox"><button class="btn" type="button" data-act="revive">🔁 ${t(withAd ? "revive_ad" : "revive_free")}</button>
+      <small>${t("revive_left", { n: revivesLeftToday() })}</small></div>`;
+  }
   function showOver() {
     if (phase !== "over") return;
     stage.querySelector(".overlay")?.remove();
@@ -1142,11 +1204,18 @@
       <p>${t("over_mode", { mode: modeName(mode), level })}</p>
       <div class="big">${score}</div>
       <p>${isNew ? `<span class="new">${t("new_record")}</span>` : t("best_n", { n: best })}</p>
+      ${reviveBox()}
       <div class="rankbox" id="overRank"></div>
       <div class="row"><button class="btn soft" type="button" data-act="menu">${t("menu")}</button><button class="btn" type="button" data-act="again">${t("again")}</button></div>`;
     // 결과 화면에서 넘어가는 순간이 전면광고 자리 (몇 판에 한 번인지는 money.js)
     o.querySelector('[data-act="again"]').addEventListener("click", () => { Money && Money.maybeInterstitial(); newGame(); });
     o.querySelector('[data-act="menu"]').addEventListener("click", () => { Money && Money.maybeInterstitial(); o.remove(); goMenu(); });
+    o.querySelector('[data-act="revive"]')?.addEventListener("click", async (e) => {
+      e.currentTarget.disabled = true;
+      // 앱: 광고 제거를 안 샀으면 보상형 광고. 광고가 안 떠도(재고 없음·오프라인) 이어하기는 허용한다.
+      if (Money && Money.isApp && !Money.state.removeAds && Money.showRewarded) await Money.showRewarded();
+      startRevive();
+    });
     stage.appendChild(o);
     renderOverRank(o.querySelector("#overRank"));
     o.querySelector('[data-act="again"]').focus();
@@ -1327,7 +1396,7 @@
     bestAtStart = best;
     const g = s && s.G;
     const legacy = s && !g && Array.isArray(s.board) && s.board.length === N * N && s.phase && Array.isArray(s.sizes);
-    if ((g && g.v === E.VERSION && Array.isArray(g.board) && g.board.length === N * N) || legacy) {
+    if ((g && E.SUPPORTED.includes(g.v) && Array.isArray(g.board) && g.board.length === N * N) || legacy) {
       if (g) {
         G = g;
       } else {

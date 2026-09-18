@@ -28,7 +28,7 @@ let ok = 0, removed = 0, skipped = 0;
 const lines = [];
 for (const doc of snap.docs) {
   const d = doc.data();
-  if (d.v !== Engine.VERSION) {
+  if (!Engine.SUPPORTED.includes(d.v)) {
     // 다른 규칙 버전으로 한 판 — 그 버전 엔진이 있어야 검증 가능. 건드리지 않는다.
     skipped++;
     continue;
