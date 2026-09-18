@@ -1,0 +1,63 @@
+# 시즌 칭호 주기 — 한 달이 끝나면 손으로 돌린다
+#
+# GitHub 저장소 → Actions → "시즌 칭호 주기" → Run workflow
+#   season: 칭호를 줄 시즌 (예: 2026-09)
+#   top:    순위표마다 몇 등까지 줄지 (예: 3)
+#   dry_run: 켜면 누가 받을지 목록만 보여 주고 실제로 주지 않는다 → 먼저 이걸로 확인
+# 주기 전에 밤마다 하는 리플레이 검증을 한 번 더 돌려서, 검증 통과(✓) 기록만 칭호를 받는다.
+name: 시즌 칭호 주기
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "시즌 (예: 2026-09)"
+        required: true
+      top:
+        description: "순위표마다 몇 등까지"
+        required: true
+        default: "3"
+      dry_run:
+        description: "목록만 보기 (실제로 주지 않음)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: firebase
+  cancel-in-progress: false
+
+jobs:
+  award:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 구글 클라우드 로그인 (키 없는 연동)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/204724489972/locations/global/workloadIdentityPools/github/providers/github-actions
+          service_account: github-actions@either-or-130af.iam.gserviceaccount.com
+      - name: 도구 설치
+        run: |
+          mkdir -p /tmp/fb && cd /tmp/fb && npm init -y > /dev/null
+          npm install --no-audit --no-fund @google-cloud/firestore@7 google-auth-library@9
+          ln -s /tmp/fb/node_modules "$GITHUB_WORKSPACE/node_modules"
+      - name: 점수 검증 (칭호 주기 전에)
+        if: ${{ !inputs.dry_run }}
+        run: node tools/verify-scores.mjs
+      - name: 칭호 주기
+        env:
+          SEASON: ${{ inputs.season }}
+          TOP: ${{ inputs.top }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: |
+          set -o pipefail
+          node tools/award-titles.mjs 2> err.txt | tee out.txt || { echo "::error::칭호 주기 실패: $(tr '\n' ' ' < err.txt | cut -c1-3000)"; exit 1; }
+          # 결과를 요약(Summary)에 남긴다 — 누가 받았는지 Actions 화면에서 바로 보인다
+          { echo '```'; cat out.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

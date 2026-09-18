@@ -322,6 +322,14 @@
   .rankgoogle .ok { color: var(--c3); font-weight: 700; }
   .rankgoogle .err { color: var(--bad); font-weight: 700; }
   .ranklist .nm .own { color: var(--c2); margin-left: 3px; }
+  .ranklist .nm .ttl { display: block; font-size: 11.5px; font-weight: 700; color: #C08A00; line-height: 1.3; }
+  .seasonrow { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 15px; }
+  .seasonrow .chip { min-width: 40px; }
+  .seasonrow .chip:disabled { opacity: 0.3; }
+  .rankname select {
+    font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--cell);
+    border-radius: 10px; padding: 7px 10px; max-width: 16em;
+  }
   .rankbox { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; }
   .rankbox p { margin: 0; }
   .rankbox .row { align-items: center; }
@@ -483,7 +491,13 @@
       <button type="button" class="chip" id="rankClose" data-i18n="close">닫기</button>
     </div>
     <div class="rankname" id="rankName"></div>
+    <div class="rankname" id="rankTitle" hidden></div>
     <div class="rankgoogle" id="rankGoogle"></div>
+    <div class="seasonrow">
+      <button type="button" class="chip" id="seasonPrev" aria-label="지난 시즌">‹</button>
+      <b id="seasonLabel"></b>
+      <button type="button" class="chip" id="seasonNext" aria-label="다음 시즌">›</button>
+    </div>
     <div class="picks tabs" id="rankTabs">
       <button type="button" data-tab="all" aria-pressed="true" data-i18n="rank_all">전체</button>
       <button type="button" data-tab="35" aria-pressed="false" data-i18n="mode35">3~5칸</button>
@@ -516,10 +530,10 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="i18n.js?v=14"></script>
+<script src="i18n.js?v=15"></script>
 <script src="money.js?v=13"></script>
 <script src="engine.js?v=13"></script>
-<script src="leaderboard.js?v=14"></script>
+<script src="leaderboard.js?v=15"></script>
 <script>
 (() => {
   const N = 8;
@@ -1225,7 +1239,18 @@
   const Board = window.Board;
   const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const rankModal = $("rankModal");
-  let rankTab = "all", rankRows = null, rankEditing = false;
+  let rankTab = "all", rankRows = null, rankEditing = false, rankSeason = "";
+
+  // 시즌·칭호 글자: "2026-09" → "2026년 9월 시즌" / 칭호 {s, r} → "26년 9월 1등"
+  const monName = (m) => new Date(2000, m - 1, 1).toLocaleString("en", { month: "short" });
+  function seasonText(sn) {
+    const [y, m] = sn.split("-").map(Number);
+    return t("season_label", { y, m, mon: monName(m) });
+  }
+  function titleText(tt) {
+    const [y, m] = String(tt.s).split("-").map(Number);
+    return t("title_label", { yy: String(y).slice(2), m, mon: monName(m), r: tt.r });
+  }
 
   const nameError = (reason) => t(reason === "length" ? "name_err_length" : reason === "chars" ? "name_err_chars"
     : reason === "taken" ? "name_err_taken" : "name_err_bad");
@@ -1315,7 +1340,8 @@
       renderRankName();
       renderRankGoogle(r.switched ? { cls: "ok", text: t("google_switched") }
         : r.nameTaken ? { cls: "err", text: t("name_err_taken") } : null);
-      Board.top(200).then((rows) => { rankRows = rows; renderRankList(); }).catch(() => {});
+      renderRankTitle();
+      loadRank();
     } catch (e) {
       const why = String((e && e.message) || e || "");
       renderRankGoogle({ cls: "err", text: t("google_err") + (why ? " (" + why.slice(0, 120) + ")" : "") });
@@ -1380,25 +1406,70 @@
     list.innerHTML = rows.map((r, i) => `
       <li class="${r.uid && r.uid === me ? "me" : ""}">
         <span class="rk">${i + 1}</span>
-        <span class="nm">${esc(r.name)}${r.owned ? `<span class="own" title="${esc(t("rank_owned"))}">🛡</span>` : ""}${r.verified ? `<em title="${esc(t("rank_verified"))}">✓</em>` : ""}</span>
+        <span class="nm">${esc(r.name)}${r.owned ? `<span class="own" title="${esc(t("rank_owned"))}">🛡</span>` : ""}${r.verified ? `<em title="${esc(t("rank_verified"))}">✓</em>` : ""}${r.title ? `<span class="ttl">🏅 ${esc(titleText(r.title))}</span>` : ""}</span>
         <span class="md">${esc(modeName(r.mode))}·Lv${r.level}</span>
         <b class="sc">${r.score}</b>
       </li>`).join("");
+  }
+
+  // 고른 시즌의 순위를 불러온다. 늦게 온 옛 시즌 응답이 새 화면을 덮지 않게 시즌을 확인한다.
+  function loadRank() {
+    const sn = rankSeason;
+    return Board.top(200, sn).then((rows) => { if (sn === rankSeason) rankRows = rows; })
+      .catch(() => { if (sn === rankSeason) rankRows = "offline"; }).finally(renderRankList);
+  }
+  function renderSeason() {
+    const all = Board.seasons(), i = all.indexOf(rankSeason);
+    $("seasonLabel").textContent = seasonText(rankSeason);
+    $("seasonPrev").disabled = i <= 0;
+    $("seasonNext").disabled = i < 0 || i >= all.length - 1;
+    $("seasonPrev").setAttribute("aria-label", t("season_prev"));
+    $("seasonNext").setAttribute("aria-label", t("season_next"));
+  }
+  function moveSeason(d) {
+    const all = Board.seasons(), i = all.indexOf(rankSeason);
+    if (!all[i + d]) return;
+    rankSeason = all[i + d];
+    renderSeason();
+    rankRows = null;
+    renderRankList();
+    loadRank();
+  }
+  $("seasonPrev").addEventListener("click", () => moveSeason(-1));
+  $("seasonNext").addEventListener("click", () => moveSeason(1));
+
+  // 내 칭호 고르기 — 칭호를 받은 사람에게만 보인다
+  function renderRankTitle() {
+    const box = $("rankTitle");
+    Board.myTitles().then((mt) => {
+      if (!mt.list.length) { box.hidden = true; return; }
+      box.hidden = false;
+      const opts = [`<option value="-1">${esc(t("title_none"))}</option>`].concat(mt.list.map((tt, i) =>
+        `<option value="${i}"${i === mt.pick ? " selected" : ""}>🏅 ${esc(titleText(tt))} · ${esc(modeName(tt.b.split("_")[0]))} Lv${esc(tt.b.split("_")[1])}</option>`));
+      box.innerHTML = `<span>${t("rank_title_pick")}</span><select id="rankTitleSel">${opts.join("")}</select><span class="err" id="rankTitleErr"></span>`;
+      $("rankTitleSel").addEventListener("change", (e) => {
+        Board.setTitle(Number(e.target.value)).then(loadRank).catch(() => {
+          $("rankTitleErr").textContent = t("title_err");
+          renderRankTitle();
+        });
+      });
+    }).catch(() => { box.hidden = true; });
   }
 
   function openRank(tab) {
     if (!Board) return;
     rankTab = tab || "all";
     rankEditing = false;
+    rankSeason = Board.seasonNow();
     if (rankModal.hidden) Nav.push("rank", () => { rankModal.hidden = true; });
     rankModal.hidden = false;
     renderRankName();
+    renderRankTitle();
     renderRankGoogle();
+    renderSeason();
     rankRows = null;
     renderRankList();
-    Board.flush().finally(() => {
-      Board.top(200).then((rows) => { rankRows = rows; }).catch(() => { rankRows = "offline"; }).finally(renderRankList);
-    });
+    Board.flush().finally(loadRank);
   }
   $("rankClose").addEventListener("click", () => { if (Nav.top() === "rank") Nav.back(); else rankModal.hidden = true; });
   document.querySelectorAll("#rankTabs button").forEach((b) => b.addEventListener("click", () => { rankTab = b.dataset.tab; renderRankList(); }));
@@ -1536,7 +1607,7 @@
       if (!startEl.hidden) syncStart();
       if (board) renderTray(false);
       if (phase === "over" && stage.querySelector(".overlay")) showOver();
-      if (!rankModal.hidden) { renderRankName(); renderRankGoogle(); renderRankList(); }
+      if (!rankModal.hidden) { renderRankName(); renderRankTitle(); renderRankGoogle(); renderSeason(); renderRankList(); }
     });
   } else {
     $("langBtn").hidden = true;

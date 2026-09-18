@@ -6,7 +6,10 @@
  * 흐름:
  *   - 기기마다 익명 로그인(가입 없음) → uid 하나. 닉네임은 이 기기에 저장.
  *   - 게임오버 → 그 판의 점수 + 행동 기록(리플레이)을 "보낼 편지함(outbox)"에 넣고, 인터넷이 되면 보낸다.
- *   - 한 사람은 (크기 모드 × 난이도) 순위표마다 최고 기록 하나만 가진다. 문서 id = uid_모드_난이도
+ *   - 시즌 = 한국 시간 기준 한 달("2026-09"). 매달 새 순위표가 열린다.
+ *   - 한 사람은 시즌마다 (크기 모드 × 난이도) 순위표마다 최고 기록 하나만 가진다. 문서 id = uid_모드_난이도_시즌
+ *   - 칭호: 시즌이 끝나면 관리자가 순위표별 1~N등에게 준다(tools/award-titles.mjs). titles/{uid} 에 보관하고,
+ *     본인이 고른 칭호(pick)가 순위표 닉네임 옆에 보인다.
  *   - 서버 규칙(firestore.rules)이 말이 안 되는 점수를 거부하고,
  *     밤마다 GitHub 가 리플레이를 다시 돌려(tools/verify-scores.mjs) 조작된 기록을 지운다.
  *
@@ -189,15 +192,33 @@
     return { ok: true, name: c.name };
   }
 
+  // ---- 시즌 (한국 시간 기준 한 달) ----
+  const FIRST_SEASON = "2026-09";
+  const seasonOf = (ms) => new Date(ms + 9 * 3600e3).toISOString().slice(0, 7);
+  const seasonNow = () => seasonOf(Date.now());
+  // FIRST_SEASON 부터 이번 달까지 (최근 것이 마지막)
+  function seasons() {
+    const out = [], now = seasonNow();
+    let [y, m] = FIRST_SEASON.split("-").map(Number);
+    for (let k = 0; k < 240; k++) {
+      const s = y + "-" + String(m).padStart(2, "0");
+      out.push(s);
+      if (s >= now) break;
+      if (++m > 12) { m = 1; y++; }
+    }
+    return out;
+  }
+
   // ---- 점수 올리기 ----
   const boardId = (mode, level) => mode + "_" + level;
+  const sentKey = (id) => seasonNow() + "|" + id;   // 이미 올린 최고 점수는 시즌마다 따로
   // 게임오버 때 부른다. 올릴 가치가 있으면(이 순위표에서 내 최고 기록) 편지함에 넣고 보내 본다.
   function queue(G) {
     if (!G || G.unranked || !(G.score > 0) || !(G.turn > 0)) return { queued: false, reason: "none" };
     const id = boardId(G.mode, G.level);
     const sent = ls.get(SENT_KEY) || {};
     const outbox = ls.get(OUTBOX_KEY) || {};
-    const bestKnown = Math.max(sent[id] || 0, (outbox[id] && outbox[id].score) || 0);
+    const bestKnown = Math.max(sent[sentKey(id)] || 0, (outbox[id] && outbox[id].score) || 0);
     if (G.score <= bestKnown) return { queued: false, reason: "lower" };
     outbox[id] = {
       mode: G.mode, level: G.level, score: G.score, turns: G.turn,
@@ -226,7 +247,9 @@
       let sentCount = 0;
       for (const id of ids) {
         const e = outbox[id];
-        const docName = `projects/${FB.projectId}/databases/(default)/documents/scores/${a.uid}_${id}`;
+        // 보내는 순간의 시즌으로 올린다(서버 규칙이 이번 달인지 확인한다)
+        const season = seasonNow();
+        const docName = `projects/${FB.projectId}/databases/(default)/documents/scores/${a.uid}_${id}_${season}`;
         const body = {
           writes: [{
             update: {
@@ -234,7 +257,7 @@
               fields: {
                 uid: fStr(a.uid), name: fStr(name), score: fInt(e.score), mode: fStr(e.mode),
                 level: fInt(e.level), turns: fInt(e.turns), seed: fInt(e.seed), slots: fInt(e.slots),
-                v: fInt(e.v), log: fStr(e.log), status: fStr("pending"),
+                v: fInt(e.v), log: fStr(e.log), status: fStr("pending"), season: fStr(season),
               },
             },
             updateTransforms: [{ fieldPath: "at", setToServerValue: "REQUEST_TIME" }],
@@ -250,7 +273,8 @@
           // 403 = 서버 규칙 거부(이미 더 높은 기록이 있거나, 너무 자주 올림 등) → 다시 보내도 소용없음
           if (r.ok) {
             const sent = ls.get(SENT_KEY) || {};
-            sent[id] = Math.max(sent[id] || 0, e.score);
+            const k = season + "|" + id;
+            sent[k] = Math.max(sent[k] || 0, e.score);
             ls.set(SENT_KEY, sent);
             sentCount++;
           }
@@ -273,8 +297,9 @@
     if ("timestampValue" in f) return f.timestampValue;
     return null;
   };
-  // 점수 높은 순 상위 limit 개. 행동 기록(log)은 크니까 빼고 받는다.
-  async function top(limit = 200) {
+  // 한 시즌의 기록을 점수 높은 순으로. 행동 기록(log)은 크니까 빼고 받는다.
+  // (시즌 조건 + 점수 정렬을 서버에서 같이 하려면 복합 색인이 필요해서, 시즌만 서버에서 거르고 정렬은 여기서 한다)
+  async function top(limit = 200, season = seasonNow()) {
     const r = await fetch(`${DOCS}:runQuery`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -282,13 +307,14 @@
         structuredQuery: {
           from: [{ collectionId: "scores" }],
           select: { fields: ["uid", "name", "score", "mode", "level", "status"].map((fieldPath) => ({ fieldPath })) },
-          orderBy: [{ field: { fieldPath: "score" }, direction: "DESCENDING" }],
-          limit,
+          where: { fieldFilter: { field: { fieldPath: "season" }, op: "EQUAL", value: { stringValue: season } } },
+          limit: 2000,
         },
       }),
     });
     if (!r.ok) throw new Error("top " + r.status);
     const rows = await r.json();
+    const titles = await allTitles().catch(() => ({}));
     // 구글 연동으로 선점된 닉네임 목록 → 그 주인이 올린 기록에 🛡 표시
     const owners = {};
     try {
@@ -304,17 +330,63 @@
     return rows.filter((x) => x.document).map((x) => {
       const f = x.document.fields || {};
       const uid = val(f.uid), name = val(f.name);
+      const tt = titles[uid];
       return {
         uid, name, score: val(f.score) || 0,
         mode: val(f.mode), level: val(f.level), verified: val(f.status) === "ok",
         owned: !!name && owners[nameKey(name)] === uid,
+        title: tt && tt.pick >= 0 ? tt.list[tt.pick] || null : null,
       };
+    }).sort((a, b) => b.score - a.score).slice(0, limit);
+  }
+
+  // ---- 칭호 ----
+  // titles/{uid} = { list: [{ s: "2026-09", b: "35_1", r: 1 }, ...], pick: 고른 칭호 번호(-1 = 안 달기) }
+  // list 는 관리자 도구만 쓰고, 본인은 pick 만 바꿀 수 있다(firestore.rules).
+  const parseTitles = (fields) => {
+    const arr = (fields.list && fields.list.arrayValue && fields.list.arrayValue.values) || [];
+    const list = arr.map((v) => {
+      const m = (v.mapValue && v.mapValue.fields) || {};
+      return { s: val(m.s), b: val(m.b), r: val(m.r) };
     });
+    const pick = fields.pick ? val(fields.pick) : 0;
+    return { list, pick: typeof pick === "number" ? pick : 0 };
+  };
+  async function allTitles() {
+    const r = await fetch(`${DOCS}:runQuery`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ structuredQuery: { from: [{ collectionId: "titles" }], limit: 2000 } }),
+    });
+    if (!r.ok) return {};
+    const out = {};
+    (await r.json()).filter((x) => x.document).forEach((x) => {
+      out[x.document.name.split("/").pop()] = parseTitles(x.document.fields || {});
+    });
+    return out;
+  }
+  async function myTitles() {
+    const uid = myUid();
+    if (!uid) return { list: [], pick: -1 };
+    const r = await fetch(`${DOCS}/titles/${uid}`);
+    if (r.status === 404) return { list: [], pick: -1 };
+    if (!r.ok) throw new Error("titles " + r.status);
+    return parseTitles((await r.json()).fields || {});
+  }
+  async function setTitle(pick) {
+    const a = await token();
+    const r = await fetch(`${DOCS}/titles/${a.uid}?updateMask.fieldPaths=pick&currentDocument.exists=true`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + a.idToken },
+      body: JSON.stringify({ fields: { pick: fInt(pick) } }),
+    });
+    if (!r.ok) throw new Error("setTitle " + r.status);
+    return true;
   }
 
   // 인터넷이 다시 연결되면 밀린 기록을 보낸다
   if (typeof window !== "undefined") window.addEventListener("online", () => { flush(); });
 
   window.Board = { checkName, getName, setName, saveName, queue, flush, top, myUid, pendingCount, isPending,
-    linkGoogle, googleInfo, GOOGLE_CLIENT_ID };
+    linkGoogle, googleInfo, GOOGLE_CLIENT_ID, seasonNow, seasons, myTitles, setTitle };
 })();

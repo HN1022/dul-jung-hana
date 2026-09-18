@@ -23,6 +23,21 @@ const Engine = box.Engine;
 
 const db = new Firestore({ projectId: PROJECT });
 
+// 시즌 도입(2026-09) 전에 올라온 기록: 문서 id 에 시즌이 없다 → 올린 날짜(한국 시간)의 시즌으로 옮긴다. 한 번 옮기면 끝.
+const seasonOf = (date) => new Date(date.getTime() + 9 * 3600e3).toISOString().slice(0, 7);
+let moved = 0;
+for (const doc of (await db.collection("scores").get()).docs) {
+  const d = doc.data();
+  if (d.season) continue;
+  const season = seasonOf(d.at && d.at.toDate ? d.at.toDate() : new Date());
+  if (!DRY) {
+    await db.collection("scores").doc(`${doc.id}_${season}`).set({ ...d, season });
+    await doc.ref.delete();
+  }
+  moved++;
+}
+if (moved) console.log(`시즌 없는 옛 기록 ${moved}개를 시즌 문서로 옮김${DRY ? " (DRY_RUN)" : ""}`);
+
 const snap = await db.collection("scores").where("status", "==", "pending").get();
 let ok = 0, removed = 0, skipped = 0;
 const lines = [];
