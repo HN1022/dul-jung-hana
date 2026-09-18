@@ -475,7 +475,6 @@
       <button type="button" class="btn" id="startPlay" data-i18n="new_game">새로 시작</button>
     </div>
     <button type="button" class="btn soft" id="startRank" data-i18n="rank_btn">🏆 순위표</button>
-    <button type="button" class="btn soft" id="startShop" hidden data-i18n="shop_btn">🛒 상점 · 광고 제거 · 보관 칸</button>
 
     <details class="rules">
       <summary data-i18n="rules_title">규칙 보기</summary>
@@ -533,8 +532,8 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="i18n.js?v=15"></script>
-<script src="money.js?v=16"></script>
+<script src="i18n.js?v=16"></script>
+<script src="money.js?v=17"></script>
 <script src="engine.js?v=13"></script>
 <script src="leaderboard.js?v=15"></script>
 <script>
@@ -580,17 +579,10 @@
   let items = [], itemCards = [];
 
   // ---- Hold slots ----
-  // 웹(아이폰 포함): 2칸 무료. 안드로이드 앱: 1칸 무료 + "보관 칸 +1" 구독 중이면 2칸.
-  // 구독 상태는 money.js 가 구글 플레이에서 확인해서 알려준다.
+  // 누구나 2칸 무료 (2026-09-18 부터. 그 전 앱은 1칸 + 구독으로 2칸이었다 — 인앱 결제는 뺐음, money.js 참고)
   const MAX_SLOTS = 2;
   const Money = window.Money;
-  const slotCount = () => (!Money || !Money.isApp) ? MAX_SLOTS : 1 + (Money.state.slotSub ? 1 : 0);
-  let slots = slotCount();
-  if (Money) Money.onChange(() => {
-    slots = slotCount();
-    if (G && G.phase !== "over") { E.setSlots(G, slots); save(); }
-    if (board) renderTray(false);
-  });
+  const slots = MAX_SLOTS;
   const canStore = () => phase === "shape" && shapes.length > 0 && held.length < slots;
   function buildItems() {
     items = phase === "shape"
@@ -814,17 +806,9 @@
     holdBar.appendChild(label);
     for (let k = 0; k < MAX_SLOTS; k++) {
       const p = held[k];
-      const locked = k >= slots && !p;   // 구독이 끝나도 들어 있던 블록은 꺼내 쓸 수 있다
-      const cell = document.createElement(locked ? "button" : "div");
+      const cell = document.createElement("div");
       cell.className = "holdslot";
-      if (locked) {
-        cell.type = "button";
-        cell.classList.add("locked");
-        cell.textContent = "🔒";
-        cell.title = t("add_slot");
-        cell.setAttribute("aria-label", t("add_slot"));
-        cell.addEventListener("click", () => { if (Money && Money.isApp) Money.openShop(); });
-      } else if (!p) {
+      if (!p) {
         cell.classList.add("empty");
         cell.innerHTML = `<span class="tag">${canStore() ? t("tap_to_hold") : t("empty")}</span>`;
       } else {
@@ -1229,7 +1213,7 @@
     o.querySelector('[data-act="menu"]').addEventListener("click", () => { Money && Money.maybeInterstitial(); o.remove(); goMenu(); });
     o.querySelector('[data-act="revive"]')?.addEventListener("click", async (e) => {
       e.currentTarget.disabled = true;
-      // 앱: 광고 제거를 안 샀으면 보상형 광고. 광고가 안 떠도(재고 없음·오프라인) 이어하기는 허용한다.
+      // 앱: 보상형 광고. 광고가 안 떠도(재고 없음·오프라인) 이어하기는 허용한다.
       if (Money && Money.isApp && !Money.state.removeAds && Money.showRewarded) await Money.showRewarded();
       startRevive();
     });
@@ -1503,6 +1487,8 @@
     if ((g && E.SUPPORTED.includes(g.v) && Array.isArray(g.board) && g.board.length === N * N) || legacy) {
       if (g) {
         G = g;
+        // 1칸으로 시작한 옛 판(구독 없던 앱)도 이제 2칸 — 기록에 남겨 리플레이 검증이 맞게
+        if (G.slots !== MAX_SLOTS && G.phase !== "over") E.setSlots(G, MAX_SLOTS);
       } else {
         // 엔진 도입 전에 시작한 판: 행동 기록이 없어 리플레이 검증이 불가 → 이어서 하되 순위 등록만 막는다
         G = E.create({ mode, level, slots });
@@ -1596,10 +1582,6 @@
   // 게임 화면 = 뒤로가기 한 칸. 뒤로가기(또는 ☰ 메뉴)를 누르면 시작 화면으로.
   function enterGame() { if (Nav.top() !== "game") Nav.push("game", () => openStart()); }
   function goMenu() { if (Nav.top() === "game") Nav.back(); else openStart(); }
-  if (Money && Money.isApp) {
-    $("startShop").hidden = false;
-    $("startShop").addEventListener("click", () => Money.openShop());
-  }
   $("menuBtn").addEventListener("click", () => {
     if (drag || paint || phase === "anim") return;
     goMenu();
