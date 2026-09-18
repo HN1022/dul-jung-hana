@@ -2,7 +2,7 @@
   "name": "dul-jung-hana",
   "version": "1.0.0",
   "private": true,
-  "description": "둘 중 하나 — 블록 퍼즐 게임",
+  "description": "블록 딜레마 (Block Dilemma) — 블록 퍼즐 게임",
   "type": "module",
   "scripts": {
     "build:web": "node tools/build-web.mjs",

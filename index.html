@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="color-scheme" content="light dark only">
-<title>둘 중 하나</title>
+<title>블록 딜레마</title>
 
 <!-- 폰트는 fonts/ 안에 들어 있어서 인터넷 없이도 같은 모양으로 나온다.
      한글 문구를 새로 추가했으면 python tools/build-fonts.py 를 다시 돌릴 것. -->
-<link rel="stylesheet" href="fonts/fonts.css?v=10">
+<link rel="stylesheet" href="fonts/fonts.css?v=11">
 
 <!-- 홈 화면에 추가했을 때 앱처럼 보이게 하는 설정들 -->
 <link rel="manifest" href="manifest.json">
@@ -16,7 +16,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="둘중하나">
+<meta name="apple-mobile-web-app-title" content="블록 딜레마">
 <style>
   :root {
     --bg: #E4EAF0;
@@ -60,6 +60,8 @@
   /* 이 페이지는 다크 모드를 직접 지원한다 → 브라우저의 "웹페이지 강제로 어둡게"가 블록 색을 바꾸지 않게.
      only = 표준의 "강제로 바꾸지 마" 신호. 삼성 인터넷은 이것도 무시할 때가 있어서 아래 안내 문구(samsungTip)도 있다. */
   :root { color-scheme: light dark only; }
+  /* hidden 속성은 항상 숨김 — display 를 준 요소(.tip 등)에서도. 없으면 삼성 안내가 모두에게 보였다 */
+  [hidden] { display: none !important; }
   html, body { height: 100%; }
   body {
     background: var(--bg);
@@ -424,10 +426,10 @@
 <div class="start" id="startScreen" hidden>
   <div class="startcard">
     <div class="titlerow">
-      <h1 data-i18n-html="title">둘 중 <em>하나</em></h1>
+      <h1 data-i18n-html="title">블록 <em>딜레마</em></h1>
       <button type="button" class="chip" id="langBtn" data-i18n="lang_btn">🌐 English</button>
     </div>
-    <p class="sub" data-i18n="sub">둘 중 하나를 골라 놓고, 가로 줄을 지우는 블록 퍼즐</p>
+    <p class="sub" data-i18n="sub">두 개의 블록, 하나의 선택. 골라 놓고 가로줄을 지우는 퍼즐</p>
     <div class="tip" id="samsungTip" hidden>
       <p data-i18n-html="samsung_tip">삼성 인터넷 다크 모드 때문에 블록 색이 어둡게 보일 수 있어요. <b>설정 → Labs(실험실) → 웹사이트 다크 테마 사용</b>을 켜면 원래 색으로 보여요.</p>
       <button type="button" class="chip" id="samsungTipClose" data-i18n="tip_close">알겠어요</button>
@@ -518,10 +520,10 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="i18n.js?v=10"></script>
-<script src="money.js?v=10"></script>
-<script src="engine.js?v=10"></script>
-<script src="leaderboard.js?v=10"></script>
+<script src="i18n.js?v=11"></script>
+<script src="money.js?v=11"></script>
+<script src="engine.js?v=11"></script>
+<script src="leaderboard.js?v=11"></script>
 <script>
 (() => {
   const N = 8;

@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v10";   // v10: 구글 연동(웹), 닉네임 선점
+const VERSION = "v11";   // v11: 이름 변경 — 블록 딜레마 / Block Dilemma
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [

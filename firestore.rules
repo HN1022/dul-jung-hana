@@ -1,4 +1,4 @@
-// Firestore 보안 규칙 — 「둘 중 하나」 순위표
+// Firestore 보안 규칙 — 「블록 딜레마」 순위표
 //
 // 이 파일을 main 에 올리면 GitHub 자동 작업(.github/workflows/firebase.yml)이 Firebase 에 적용한다.
 // Firebase 콘솔의 "규칙" 화면에서 직접 고치면 다음 적용 때 이 파일 내용으로 덮어써지니, 여기서만 고칠 것.

@@ -1,4 +1,4 @@
-/* 언어 (한국어 / English) — 「둘 중 하나」
+/* 언어 (한국어 / English) — 「블록 딜레마 / Block Dilemma」
  *
  * 처음엔 폰·브라우저 언어를 따라가고(한국어가 아니면 영어), 시작 화면의 🌐 버튼으로 바꾸면 기억한다.
  *
@@ -11,7 +11,7 @@
 (() => {
   const D = {
     ko: {
-      doc_title: "둘 중 하나",
+      doc_title: "블록 딜레마",
       lang_btn: "🌐 English",
       menu: "메뉴",
       score: "점수",
@@ -19,8 +19,8 @@
       board: "8×8 보드",
 
       // 시작 화면
-      title: "둘 중 <em>하나</em>",
-      sub: "둘 중 하나를 골라 놓고, 가로 줄을 지우는 블록 퍼즐",
+      title: "블록 <em>딜레마</em>",
+      sub: "두 개의 블록, 하나의 선택. 골라 놓고 가로줄을 지우는 퍼즐",
       h_size: "블록 크기",
       mode35: "3~5칸",
       mode35_sub: "기본",
@@ -145,15 +145,15 @@
     },
 
     en: {
-      doc_title: "Either Or",
+      doc_title: "Block Dilemma",
       lang_btn: "🌐 한국어",
       menu: "Menu",
       score: "SCORE",
       best: "BEST",
       board: "8×8 board",
 
-      title: "Either <em>Or</em>",
-      sub: "Pick one of two blocks, fill a row, clear it.",
+      title: "Block <em>Dilemma</em>",
+      sub: "Two blocks, one choice. Pick one, fill a row, clear it.",
       h_size: "BLOCK SIZE",
       mode35: "3–5 cells",
       mode35_sub: "Classic",
