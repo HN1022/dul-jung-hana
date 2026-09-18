@@ -1376,7 +1376,10 @@
           // 사용자가 창을 닫은 건 오류로 보여 주지 않는다
           // 원인을 알 수 있게 오류 내용을 짧게 붙인다(설정 문제면 "28444 Developer console…" 등)
           const why = String((e && (e.message || e.code)) || e || "");
-          if (!/cancel/i.test(why)) renderRankGoogle({ cls: "err", text: t("google_err") + " (" + why.slice(0, 80) + ")" });
+          // 설정 문제 찾기용: 이 폰에 설치된 앱의 서명 SHA-1 (구글 클라우드에 등록돼 있어야 한다)
+          let sha = "";
+          try { sha = window.AppInfo ? " · SHA-1 " + window.AppInfo.signingSha1() : ""; } catch (e2) {}
+          if (!/cancel/i.test(why)) renderRankGoogle({ cls: "err", text: t("google_err") + " (" + why.slice(0, 80) + sha + ")" });
           return;
         }
         if (idToken) linkWith(idToken);
