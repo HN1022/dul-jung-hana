@@ -7,12 +7,13 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v3";   // v3: money.js(광고·결제), i18n.js(영어), 상태바 여백
+const VERSION = "v4";   // v4: 개인정보처리방침 페이지 추가, 확대 차단, 영어 이름 Either Or
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
   "./",
   "./index.html",
+  "./privacy.html",
   "./i18n.js",
   "./money.js",
   "./manifest.json",

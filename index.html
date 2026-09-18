@@ -259,6 +259,8 @@
 
   .rules { font-size: 12.5px; color: var(--muted); line-height: 1.65; margin: 0; }
   details.rules summary { cursor: pointer; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .legal { margin: 0; font-size: 12px; text-align: center; }
+  .legal a { color: var(--muted); }
 
   /* ---- Hold slots ---- */
   .holdbar { display: grid; grid-template-columns: auto repeat(var(--slots, 3), 1fr); gap: 8px; align-items: stretch; }
@@ -397,6 +399,9 @@
       <summary data-i18n="rules_title">규칙 보기</summary>
       <span data-i18n-html="rules">크기를 고르면 블록 두 개가 나와요. 그중 하나를 보드에 놓으면 한 턴이 끝나요. <b>✏️ 그리기</b>: 블록을 원하는 방향으로 돌려서 보드 빈칸에 직접 칠하면 손을 뗄 때 놓여요(뒤집은 모양은 안 돼요). <b>✋ 끌어놓기</b>: 블록을 탭하거나 ↻를 눌러 돌리고 보드로 끌어다 놓아요. PC에서는 끄는 중에 R키로도 돌릴 수 있어요. <b>📦 보관</b>: 블록의 📦 버튼을 누르면 보관함에 들어가고, 다음 턴부터 아무 때나 꺼내 놓을 수 있어요. 대신 그 턴은 아무것도 놓지 못하고 크기 선택부터 다시 시작해요(방해 블록 턴은 그대로 흘러가요). 가로 한 줄을 꽉 채우면 사라지고 그 위의 블록들이 내려와요. 가진 블록을 어떻게 돌려도 놓을 곳이 없으면 게임 끝! <b>난이도</b> 1은 방해 없음, 2는 4턴마다 1칸, 3은 3턴마다 2칸, 4는 2턴마다 2칸씩 회색 방해 블록이 빈칸에 떨어져요. 대신 점수가 ×1 · ×1.5 · ×2 · ×3배! 방해 블록은 줄을 공짜로 완성시키지 않아요. 큰 블록은 난이도가 높을수록, 그리고 판이 길어질수록(80턴까지 20턴마다 알림) 더 자주 나와요. 1~6칸 모드는 처음부터 큰 블록 위주예요. 크기 모드·난이도마다 기록이 따로 저장돼요.</span>
     </details>
+
+    <!-- 광고가 들어간 앱은 스토어 정책상 개인정보처리방침을 앱 안에서도 볼 수 있어야 한다. -->
+    <p class="legal"><a href="privacy.html" target="_blank" rel="noopener" data-i18n="privacy_link">개인정보처리방침</a></p>
   </div>
 </div>
 
