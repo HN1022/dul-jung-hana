@@ -1317,7 +1317,8 @@
         : r.nameTaken ? { cls: "err", text: t("name_err_taken") } : null);
       Board.top(200).then((rows) => { rankRows = rows; renderRankList(); }).catch(() => {});
     } catch (e) {
-      renderRankGoogle({ cls: "err", text: t("google_err") });
+      const why = String((e && e.message) || e || "");
+      renderRankGoogle({ cls: "err", text: t("google_err") + (why ? " (" + why.slice(0, 120) + ")" : "") });
     }
   }
   function renderRankGoogle(msg) {
