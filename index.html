@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>둘 중 하나</title>
 
@@ -60,6 +60,10 @@
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
     user-select: none; -webkit-user-select: none;
+    /* 두 번 두드렸을 때 화면이 확대되지 않게 한다. 보드는 touch-action: none 으로 따로 막혀 있다. */
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
   :root {
     /* 폰 상태바/내비게이션 바 높이. 안드로이드 앱은 Capacitor가 --safe-area-inset-* 로,
@@ -396,6 +400,13 @@
   </div>
 </div>
 
+<script>
+  // 확대 막기: 사파리는 user-scalable=no 를 무시하므로 두 손가락 확대(gesture*)와
+  // 두 번 두드리기(dblclick)를 직접 막는다. 한 손가락 조작은 그대로 동작한다.
+  for (const ev of ["gesturestart", "gesturechange", "gestureend", "dblclick"]) {
+    document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
+  }
+</script>
 <script src="i18n.js"></script>
 <script src="money.js"></script>
 <script>
