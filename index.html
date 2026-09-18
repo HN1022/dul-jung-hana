@@ -268,6 +268,49 @@
   .rules { font-size: 12.5px; color: var(--muted); line-height: 1.65; margin: 0; }
   details.rules summary { cursor: pointer; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
   .legal { margin: 0; font-size: 12px; text-align: center; }
+
+  /* ---- 순위표 ---- */
+  .rank {
+    position: fixed; inset: 0; z-index: 30; overflow-y: auto;
+    background: var(--bg); display: flex; justify-content: center;
+    padding: calc(var(--top-gap) + 20px) 16px calc(var(--bottom-gap) + 28px);
+  }
+  .rank[hidden] { display: none; }
+  .rankcard { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 12px; }
+  .rankcard h2 { margin: 0; font-size: 26px; font-weight: 900; }
+  .picks.tabs { grid-template-columns: repeat(3, 1fr); }
+  .picks.tabs button { padding-block: 8px; }
+  .rankname { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; }
+  .rankname b { font-weight: 800; }
+  .rankname input {
+    font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--cell);
+    border-radius: 10px; padding: 7px 10px; width: 9.5em;
+  }
+  .rankname .err, .rankbox .err { color: var(--bad); font-size: 12px; font-weight: 700; width: 100%; }
+  .ranklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  .ranklist li {
+    display: grid; grid-template-columns: 2.2em 1fr auto auto; align-items: center; gap: 8px;
+    padding: 9px 12px; border-radius: 10px; background: var(--panel); font-variant-numeric: tabular-nums;
+  }
+  .ranklist li.me { box-shadow: inset 0 0 0 2px var(--c4); }
+  .ranklist .rk { font-family: "Baloo 2", system-ui, sans-serif; font-weight: 800; color: var(--muted); }
+  .ranklist li:nth-child(1) .rk { color: #E0A800; }
+  .ranklist li:nth-child(2) .rk { color: #9AA7B4; }
+  .ranklist li:nth-child(3) .rk { color: #C27A4A; }
+  .ranklist .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ranklist .nm em { font-style: normal; color: var(--c3); font-size: 12px; margin-left: 4px; }
+  .ranklist .md { font-size: 11.5px; color: var(--muted); }
+  .ranklist .sc { font-family: "Baloo 2", system-ui, sans-serif; font-size: 18px; font-weight: 800; }
+  .ranklist .msg { display: block; text-align: center; color: var(--muted); background: transparent; padding: 24px 8px; }
+  .ranknote { margin: 0; font-size: 12px; color: var(--muted); }
+  .rankbox { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; }
+  .rankbox p { margin: 0; }
+  .rankbox .row { align-items: center; }
+  .rankbox input {
+    font: inherit; color: var(--ink); background: var(--panel); border: 0; border-radius: 10px;
+    padding: 8px 10px; width: 9em; text-align: center;
+  }
+  .rankbox .ok { color: var(--c3); font-weight: 700; }
   .legal a { color: var(--muted); }
 
   /* ---- Hold slots ---- */
@@ -401,6 +444,7 @@
       <button type="button" class="btn soft" id="startResume" hidden data-i18n="resume">이어서 하기</button>
       <button type="button" class="btn" id="startPlay" data-i18n="new_game">새로 시작</button>
     </div>
+    <button type="button" class="btn soft" id="startRank" data-i18n="rank_btn">🏆 순위표</button>
     <button type="button" class="btn soft" id="startShop" hidden data-i18n="shop_btn">🛒 상점 · 광고 제거 · 보관 칸</button>
 
     <details class="rules">
@@ -410,6 +454,23 @@
 
     <!-- 광고가 들어간 앱은 스토어 정책상 개인정보처리방침을 앱 안에서도 볼 수 있어야 한다. -->
     <p class="legal"><a href="privacy.html" target="_blank" rel="noopener" data-i18n="privacy_link">개인정보처리방침</a></p>
+  </div>
+</div>
+
+<div class="rank" id="rankModal" hidden>
+  <div class="rankcard">
+    <div class="titlerow">
+      <h2 data-i18n="rank_title">순위표</h2>
+      <button type="button" class="chip" id="rankClose" data-i18n="close">닫기</button>
+    </div>
+    <div class="rankname" id="rankName"></div>
+    <div class="picks tabs" id="rankTabs">
+      <button type="button" data-tab="all" aria-pressed="true" data-i18n="rank_all">전체</button>
+      <button type="button" data-tab="35" aria-pressed="false" data-i18n="mode35">3~5칸</button>
+      <button type="button" data-tab="16" aria-pressed="false" data-i18n="mode16">1~6칸</button>
+    </div>
+    <ol class="ranklist" id="rankList"></ol>
+    <p class="ranknote" data-i18n="rank_note">✓ 표시는 매일 밤 리플레이 검증을 통과한 기록이에요</p>
   </div>
 </div>
 
@@ -423,6 +484,8 @@
 </script>
 <script src="i18n.js"></script>
 <script src="money.js"></script>
+<script src="engine.js"></script>
+<script src="leaderboard.js"></script>
 <script>
 (() => {
   const N = 8;
@@ -438,136 +501,28 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   };
 
-  // ---- Polyominoes: generated for sizes 1–6 (1, 1, 2, 5, 12, 35 free shapes) ----
-  const normalize = (c) => {
-    const mx = Math.min(...c.map((p) => p[0])), my = Math.min(...c.map((p) => p[1]));
-    return c.map(([x, y]) => [x - mx, y - my]).sort((a, b) => a[1] - b[1] || a[0] - b[0]);
-  };
-  const orientations = (c) => {
-    const out = new Map();
-    let cur = c;
-    for (let f = 0; f < 2; f++) {
-      for (let r = 0; r < 4; r++) {
-        cur = cur.map(([x, y]) => [-y, x]);
-        const n = normalize(cur);
-        out.set(JSON.stringify(n), n);
-      }
-      cur = cur.map(([x, y]) => [-x, y]);
-    }
-    return [...out.values()];
-  };
-  const FREE = { 1: [[[0, 0]]] };
-  for (let n = 2; n <= 6; n++) {
-    const found = new Map();
-    for (const shape of FREE[n - 1]) {
-      const has = new Set(shape.map((p) => p.join(",")));
-      for (const [x, y] of shape) {
-        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-          const nx = x + dx, ny = y + dy;
-          if (has.has(nx + "," + ny)) continue;
-          const keys = orientations([...shape, [nx, ny]]).map((o) => JSON.stringify(o)).sort();
-          if (!found.has(keys[0])) found.set(keys[0], JSON.parse(keys[0]));
-        }
-      }
-    }
-    FREE[n] = [...found.values()];
-  }
-  const ORIENTS = {};
-  for (let n = 1; n <= 6; n++) ORIENTS[n] = FREE[n].map(orientations);
-  const pick = (a) => a[Math.floor(Math.random() * a.length)];
-  // Base odds for each size in the size choice.
-  // 1~6 mode at the start of level 1: a size's chance of appearing ≈ 1:8% 2:16% 3:31% 4:44% 5:50% 6:50%
-  const BASE_WEIGHTS = {
-    "35": { 3: 1, 4: 1, 5: 1 },
-    "16": { 1: 1, 2: 2, 3: 4, 4: 6, 5: 7, 6: 7 },
-  };
-  // Extra push toward big blocks: from the difficulty level, plus growth as the game goes on
-  const LEVEL_PUSH = { 1: 0, 2: 0.4, 3: 0.8, 4: 1.2 };
-  const GROWTH_TURNS = 80;   // growth reaches its max after this many placements
-  const GROWTH_MAX = 1.0;
-  function sizeWeights() {
-    const { min, max } = MODES[mode];
-    const push = LEVEL_PUSH[level] + GROWTH_MAX * Math.min(1, turn / GROWTH_TURNS);
-    const w = {};
-    for (let s = min; s <= max; s++) w[s] = BASE_WEIGHTS[mode][s] * Math.exp(push * (s - min) / (max - min));
-    return w;
-  }
-  function weightedPick(items, weights) {
-    const total = items.reduce((sum, s) => sum + weights[s], 0);
-    let r = Math.random() * total;
-    for (const s of items) { r -= weights[s]; if (r < 0) return s; }
-    return items[items.length - 1];
-  }
-  // Fisher–Yates: every order equally likely (sort with a random comparator is heavily biased)
-  function shuffle(a) {
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-
-  const mk = (size, cells) => ({
-    size, cells,
-    w: Math.max(...cells.map((p) => p[0])) + 1,
-    h: Math.max(...cells.map((p) => p[1])) + 1,
-    key: JSON.stringify(cells),
-  });
-  const rotate = (p) => mk(p.size, normalize(p.cells.map(([x, y]) => [p.h - 1 - y, x])));
-  // Drawing may use any of the 4 rotations (mirror images don't count)
-  function rotations(p) {
-    const out = [];
-    let q = p;
-    for (let r = 0; r < 4; r++) { out.push(q); q = rotate(q); }
-    return out;
-  }
-
-  // ---- 블록 점수 ----
-  // 크기가 클수록 가파르게 오른다(삼각수). 5칸 하나가 한 줄 지우기(10점)보다 커서 큰 블록을 고를 이유가 생긴다.
-  const SIZE_POINTS = { 1: 1, 2: 3, 3: 6, 4: 10, 5: 15, 6: 21 };
-  // ★ 까다로운 모양: 칸 수에 비해 차지하는 네모 영역이 넓어서(빈틈이 많아서) 줄 채우기가 어려운 모양.
-  //   5칸: F·T·V·W·X·Z (3×3 안에 5칸), 6칸: 3×4 영역을 쓰는 모양들. 회전해도 판정은 같다.
-  const TRICKY_RATIO = 5 / 9;
-  const TRICKY_BONUS = 1.5;
-  const isTricky = (p) => p.size >= 4 && p.size / (p.w * p.h) <= TRICKY_RATIO + 1e-9;
-  const blockPoints = (p) => {
-    const base = SIZE_POINTS[p.size] || p.size;
-    return isTricky(p) ? Math.ceil(base * TRICKY_BONUS) : base;
-  };
-  // Distinct pieces when mirrors count as different (L and J are separate):
-  // sizes 1–6 → 1, 1, 2, 7, 18, 60 pieces. Each is equally likely.
-  const PIECES = {};
-  for (let n = 1; n <= 6; n++) {
-    const seen = new Set();
-    PIECES[n] = [];
-    for (const o of ORIENTS[n].flat()) {
-      const p = mk(n, o);
-      if (seen.has(p.key)) continue;
-      const group = [];
-      for (const q of rotations(p)) {
-        if (!seen.has(q.key)) { seen.add(q.key); group.push(q.cells); }
-      }
-      PIECES[n].push(group);
-    }
-  }
-  const makePiece = (size) => mk(size, pick(pick(PIECES[size])));
+  // ---- 규칙은 전부 engine.js 에 있다 ----
+  // 화면은 엔진에 행동을 넘기고(크기 고르기·놓기·보관) 돌아온 결과를 그리기만 한다.
+  // 그래야 밤마다 도는 리플레이 검증이 화면과 똑같은 점수를 계산한다.
+  const E = window.Engine;
+  const { normalize, mk, rotate, rotations, isTricky, blockPoints, SIZE_POINTS, GROWTH_TURNS } = E;
 
   // ---- State ----
   let mode = "35";
   let control = store.get(KEY + "control") === "drag" ? "drag" : "draw";
-  // Garbage blocks: every `every` placements, drop `count` stone cells
-  const LEVELS = {
-    1: { every: 0, count: 0, mult: 1 },
-    2: { every: 4, count: 1, mult: 1.5 },
-    3: { every: 3, count: 2, mult: 2 },
-    4: { every: 2, count: 2, mult: 3 },
-  };
+  const LEVELS = E.LEVELS;
   let level = LEVELS[store.get(KEY + "level")] ? Number(store.get(KEY + "level")) : 1;
   let turnsLeft = 0;
   let turn = 0;   // placements this game
   // Level 1 keeps the original save slot so existing games carry over
   const slotKey = () => KEY + mode + (level === 1 ? "" : "-L" + level);
   let board, score = 0, best = 0, streak = 0, phase = "size", sizes = [], shapes = [], held = [];
+  // G = 엔진이 들고 있는 이번 판의 진짜 상태(seed·행동 기록 포함). 위 변수들은 화면용 사본.
+  let G = null;
+  function sync() {
+    board = G.board; score = G.score; streak = G.streak; sizes = G.sizes;
+    shapes = G.shapes; held = G.held; turn = G.turn; turnsLeft = G.turnsLeft;
+  }
   let bestAtStart = 0, drawSet = new Set(), paint = null;
   // What can be placed right now: the offered shapes plus whatever sits in the hold slots.
   // items[k] = { p, from: "s" | "h", i }   ·   itemCards[k] = that item's card element
@@ -580,7 +535,11 @@
   const Money = window.Money;
   const slotCount = () => (!Money || !Money.isApp) ? MAX_SLOTS : 1 + (Money.state.slotSub ? 1 : 0);
   let slots = slotCount();
-  if (Money) Money.onChange(() => { slots = slotCount(); if (board) renderTray(false); });
+  if (Money) Money.onChange(() => {
+    slots = slotCount();
+    if (G && G.phase !== "over") { E.setSlots(G, slots); save(); }
+    if (board) renderTray(false);
+  });
   const canStore = () => phase === "shape" && shapes.length > 0 && held.length < slots;
   function buildItems() {
     items = phase === "shape"
@@ -649,10 +608,7 @@
       p.addEventListener("animationend", () => p.remove());
     }
   }
-  const snapshotState = () => ({
-    board, score, best, streak, sizes, shapes, held, turnsLeft, turn,
-    phase: phase === "anim" ? "size" : phase,
-  });
+  const snapshotState = () => ({ G, best });
   function save() {
     store.set(slotKey(), snapshotState());
     store.set(KEY + "mode", mode);
@@ -666,40 +622,19 @@
     w.classList.toggle("soon", soon);
     w.textContent = soon ? t("warn_soon", { n: L.count }) : t("warn_turns", { n: turnsLeft });
   }
-  function spawnGarbage() {
-    const L = LEVELS[level];
-    if (!L.every) return;
-    turnsLeft--;
-    if (turnsLeft > 0) return;
-    turnsLeft = L.every;
-    const added = [];
-    for (let k = 0; k < L.count; k++) {
-      // Only rows with 2+ empty cells, so garbage never completes a row by itself
-      const options = [];
-      for (let r = 0; r < N; r++) {
-        const empties = [];
-        for (let c = 0; c < N; c++) if (!board[r * N + c]) empties.push(r * N + c);
-        if (empties.length >= 2) options.push(...empties);
-      }
-      if (!options.length) break;
-      const i = pick(options);
-      board[i] = 9;
-      added.push(i);
-    }
+  // 한 턴이 끝난 뒤(놓기·보관): 엔진이 떨어뜨린 방해 블록을 보여주고 다음 크기 선택으로
+  function finishTurn(res) {
+    sync();
     renderBoard();
-    added.forEach((i) => {
+    (res.garbage || []).forEach((i) => {
       const el = cellEls[i];
       el.classList.remove("garbage-in"); void el.offsetWidth; el.classList.add("garbage-in");
       el.addEventListener("animationend", () => el.classList.remove("garbage-in"), { once: true });
     });
-    if (added.length) vibrate([10, 30, 10]);
-  }
-  function afterPlacement() {
-    turn++;
+    if (res.garbage && res.garbage.length) vibrate([10, 30, 10]);
     if (turn % 20 === 0 && turn <= GROWTH_TURNS) {
       notice(turn === GROWTH_TURNS ? t("grow_max") : t("grow"), t("turns_passed", { n: turn }));
     }
-    spawnGarbage();
     nextTurn();
   }
   function vibrate(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} }
@@ -864,39 +799,27 @@
   // and the next turn starts from the size choice again.
   function storeShape(idx) {
     if (!canStore() || !shapes[idx]) return;
-    held.push(shapes[idx]);
-    shapes = [];
+    const res = E.store(G, idx);
+    if (!res) return;
     drawSet = new Set();
     clearPreview();
     vibrate([6, 30, 10]);
-    afterPlacement();
+    finishTurn(res);
   }
 
   function chooseSize(s) {
-    if (phase !== "size") return;
-    const a = makePiece(s);
-    const aKeys = new Set(rotations(a).map((q) => q.key));
-    let b = makePiece(s), tries = 0;
-    while (aKeys.has(b.key) && tries++ < 30) b = makePiece(s);
-    shapes = aKeys.has(b.key) ? [a] : [a, b];
-    phase = "shape";
+    if (phase !== "size" || !E.chooseSize(G, s)) return;
+    sync();
+    phase = "shape";   // 막혔으면 엔진은 이미 "over" — 화면은 블록을 한 번 보여준 뒤 endGame
     drawSet = new Set();
     vibrate(6);
     renderTray();
-    if (isStuck()) endGame(900);
+    if (G.phase === "over") endGame(900);
     save();
   }
 
   function nextTurn() {
-    const { min, max } = MODES[mode];
-    const all = [];
-    for (let s = min; s <= max; s++) all.push(s);
-    // Weighted draw of two different sizes: bigger blocks show up more often
-    const weights = sizeWeights();
-    const first = weightedPick(all, weights);
-    const second = weightedPick(all.filter((s) => s !== first), weights);
-    sizes = [first, second].sort((a, b) => a - b);
-    shapes = [];
+    sync();
     drawSet = new Set();
     phase = "size";
     renderTray();
@@ -1111,49 +1034,43 @@
 
   // ---- Placement & clearing ----
   function place(p, ax, ay, item) {
-    if (item && item.from === "h") held.splice(item.i, 1);
-    const placedIdx = p.cells.map(([x, y]) => (ay + y) * N + ax + x);
-    placedIdx.forEach((i) => { board[i] = p.size; });
+    const res = item ? E.place(G, item.from, item.i, p.cells, ax, ay) : null;
+    if (!res) { renderTray(false); return; }
+    board = res.boardPlaced;
     renderBoard();
-    placedIdx.forEach((i) => {
+    res.placedIdx.forEach((i) => {
       const el = cellEls[i];
       el.classList.remove("placed"); void el.offsetWidth; el.classList.add("placed");
     });
-    let gained = blockPoints(p);
-    const { lines, idx, rows } = fullRows(board);
 
-    if (lines) {
-      streak++;
-      gained += 10 * lines * lines * streak;
+    if (res.lines) {
       phase = "anim";
       tray.innerHTML = "";
       boardEl.classList.remove("drawing");
-      idx.forEach((i) => cellEls[i].classList.add("clearing"));
-      toast(lines, streak);
-      vibrate(lines >= 2 ? [20, 40, 30] : 18);
-      if (lines >= 2 || streak >= 3) {
+      res.clearIdx.forEach((i) => cellEls[i].classList.add("clearing"));
+      toast(res.lines, res.streak);
+      vibrate(res.lines >= 2 ? [20, 40, 30] : 18);
+      if (res.lines >= 2 || res.streak >= 3) {
         boardEl.classList.remove("shake"); void boardEl.offsetWidth; boardEl.classList.add("shake");
       }
       setTimeout(() => {
-        idx.forEach((i) => cellEls[i].classList.remove("clearing"));
-        const falls = collapse(rows);
+        res.clearIdx.forEach((i) => cellEls[i].classList.remove("clearing"));
+        board = res.boardCleared;
         renderBoard();
-        falls.forEach(([i, shift]) => {
+        res.falls.forEach(([i, shift]) => {
           const el = cellEls[i];
           el.style.setProperty("--fall", shift);
           el.classList.remove("fall"); void el.offsetWidth; el.classList.add("fall");
           el.addEventListener("animationend", () => el.classList.remove("fall"), { once: true });
         });
-        afterPlacement();
+        finishTurn(res);
       }, 300);
     } else {
-      streak = 0;
       vibrate(8);
-      afterPlacement();
+      finishTurn(res);
     }
-    gained = Math.round(gained * LEVELS[level].mult);
-    score += gained;
-    updateHud(gained);
+    score = G.score;
+    updateHud(res.gained);
     save();
   }
 
@@ -1174,8 +1091,10 @@
     el.addEventListener("animationend", () => el.remove());
   }
 
+  let overSubmit = { queued: false };
   function endGame(delay = 0) {
     if (Money && phase !== "over") Money.gameEnded();
+    if (phase !== "over") overSubmit = Board ? Board.queue(G) : { queued: false };
     phase = "over";
     drawSet = new Set();
     renderTray(false);
@@ -1192,20 +1111,127 @@
       <p>${t("over_mode", { mode: modeName(mode), level })}</p>
       <div class="big">${score}</div>
       <p>${isNew ? `<span class="new">${t("new_record")}</span>` : t("best_n", { n: best })}</p>
+      <div class="rankbox" id="overRank"></div>
       <div class="row"><button class="btn soft" type="button" data-act="menu">${t("menu")}</button><button class="btn" type="button" data-act="again">${t("again")}</button></div>`;
     // 결과 화면에서 넘어가는 순간이 전면광고 자리 (몇 판에 한 번인지는 money.js)
     o.querySelector('[data-act="again"]').addEventListener("click", () => { Money && Money.maybeInterstitial(); newGame(); });
     o.querySelector('[data-act="menu"]').addEventListener("click", () => { Money && Money.maybeInterstitial(); o.remove(); openStart(); });
     stage.appendChild(o);
+    renderOverRank(o.querySelector("#overRank"));
     o.querySelector('[data-act="again"]').focus();
   }
 
+  // ---- 순위표 ----
+  const Board = window.Board;
+  const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const rankModal = $("rankModal");
+  let rankTab = "all", rankRows = null, rankEditing = false;
+
+  const nameError = (reason) => t(reason === "length" ? "name_err_length" : reason === "chars" ? "name_err_chars" : "name_err_bad");
+
+  // 게임오버 화면: 새 기록이면 닉네임 받고 올리기
+  function renderOverRank(el) {
+    if (!el) return;
+    if (!Board) { el.hidden = true; return; }
+    const seeBtn = `<button type="button" class="btn small" data-act="rank">${t("over_rank")}</button>`;
+    const wire = () => {
+      el.querySelector('[data-act="rank"]')?.addEventListener("click", () => openRank(mode));
+    };
+    if (G && G.unranked) { el.innerHTML = `<p>${t("over_unranked")}</p>${seeBtn}`; wire(); return; }
+    if (!overSubmit.queued) {
+      el.innerHTML = (overSubmit.reason === "lower" ? `<p>${t("over_notbest")}</p>` : "") + seeBtn;
+      wire();
+      return;
+    }
+    const send = () => {
+      el.innerHTML = `<p>${t("over_sending")}</p>`;
+      Board.flush().then(() => {
+        const waiting = Board.isPending(G.mode, G.level);
+        el.innerHTML = `<p class="${waiting ? "" : "ok"}">${t(waiting ? "over_queued" : "over_sent")}</p>${seeBtn}`;
+        wire();
+      });
+    };
+    if (Board.getName()) { send(); return; }
+    el.innerHTML = `<p>${t("over_need_name")}</p>
+      <div class="row"><input id="overName" maxlength="10" placeholder="${esc(t("rank_name"))}" autocomplete="off">
+      <button type="button" class="btn small" data-act="submit">${t("over_submit")}</button></div>
+      <span class="err" id="overErr"></span>`;
+    const input = el.querySelector("#overName");
+    const go = () => {
+      const c = Board.checkName(input.value);
+      if (!c.ok) { el.querySelector("#overErr").textContent = nameError(c.reason); return; }
+      Board.setName(c.name);
+      send();
+    };
+    el.querySelector('[data-act="submit"]').addEventListener("click", go);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+  }
+
+  function renderRankName() {
+    const box = $("rankName");
+    const name = Board ? Board.getName() : "";
+    if (rankEditing || !name) {
+      box.innerHTML = `<span>${t("rank_name")}</span>
+        <input id="rankNameInput" maxlength="10" value="${esc(name)}" placeholder="${esc(t("rank_name_hint"))}" autocomplete="off">
+        <button type="button" class="btn small" id="rankNameSave">${t("rank_save")}</button>
+        <span class="err" id="rankNameErr"></span>`;
+      const input = $("rankNameInput");
+      const go = () => {
+        const c = Board.checkName(input.value);
+        if (!c.ok) { $("rankNameErr").textContent = nameError(c.reason); return; }
+        Board.setName(c.name);
+        rankEditing = false;
+        renderRankName();
+        Board.flush();
+      };
+      $("rankNameSave").addEventListener("click", go);
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+    } else {
+      box.innerHTML = `<span>${t("rank_name")}</span> <b>${esc(name)}</b>
+        <button type="button" class="btn small" id="rankNameEdit">${t("rank_change")}</button>`;
+      $("rankNameEdit").addEventListener("click", () => { rankEditing = true; renderRankName(); });
+    }
+  }
+
+  function renderRankList() {
+    const list = $("rankList");
+    document.querySelectorAll("#rankTabs button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.tab === rankTab)));
+    if (rankRows === null) { list.innerHTML = `<li class="msg">${t("rank_loading")}</li>`; return; }
+    if (rankRows === "offline") { list.innerHTML = `<li class="msg">${t("rank_offline")}</li>`; return; }
+    const me = Board.myUid();
+    const rows = rankRows.filter((r) => rankTab === "all" || r.mode === rankTab).slice(0, 100);
+    if (!rows.length) { list.innerHTML = `<li class="msg">${t("rank_empty")}</li>`; return; }
+    list.innerHTML = rows.map((r, i) => `
+      <li class="${r.uid && r.uid === me ? "me" : ""}">
+        <span class="rk">${i + 1}</span>
+        <span class="nm">${esc(r.name)}${r.verified ? `<em title="${esc(t("rank_verified"))}">✓</em>` : ""}</span>
+        <span class="md">${esc(modeName(r.mode))}·Lv${r.level}</span>
+        <b class="sc">${r.score}</b>
+      </li>`).join("");
+  }
+
+  function openRank(tab) {
+    if (!Board) return;
+    rankTab = tab || "all";
+    rankEditing = false;
+    rankModal.hidden = false;
+    renderRankName();
+    rankRows = null;
+    renderRankList();
+    Board.flush().finally(() => {
+      Board.top(200).then((rows) => { rankRows = rows; }).catch(() => { rankRows = "offline"; }).finally(renderRankList);
+    });
+  }
+  $("rankClose").addEventListener("click", () => { rankModal.hidden = true; });
+  document.querySelectorAll("#rankTabs button").forEach((b) => b.addEventListener("click", () => { rankTab = b.dataset.tab; renderRankList(); }));
+  $("startRank").addEventListener("click", () => openRank("all"));
+  if (!Board) $("startRank").hidden = true;
+
   function newGame() {
     stage.querySelector(".overlay")?.remove();
-    board = Array(N * N).fill(0);
-    score = 0; streak = 0; held = []; bestAtStart = best;
-    turnsLeft = LEVELS[level].every;
-    turn = 0;
+    G = E.create({ mode, level, slots });
+    bestAtStart = best;
+    sync();
     renderBoard();
     updateHud(0);
     nextTurn();
@@ -1217,12 +1243,24 @@
     drawSet = new Set();
     best = (s && s.best) || 0;
     bestAtStart = best;
-    if (s && Array.isArray(s.board) && s.board.length === N * N && s.phase && Array.isArray(s.sizes)) {
-      board = s.board; score = s.score || 0; streak = s.streak || 0;
-      sizes = s.sizes; shapes = s.shapes || []; held = Array.isArray(s.held) ? s.held : [];
-      turnsLeft = s.turnsLeft > 0 ? s.turnsLeft : LEVELS[level].every;
-      turn = s.turn || 0;
-      phase = s.phase === "shape" && !shapes.length ? "size" : s.phase;
+    const g = s && s.G;
+    const legacy = s && !g && Array.isArray(s.board) && s.board.length === N * N && s.phase && Array.isArray(s.sizes);
+    if ((g && g.v === E.VERSION && Array.isArray(g.board) && g.board.length === N * N) || legacy) {
+      if (g) {
+        G = g;
+      } else {
+        // 엔진 도입 전에 시작한 판: 행동 기록이 없어 리플레이 검증이 불가 → 이어서 하되 순위 등록만 막는다
+        G = E.create({ mode, level, slots });
+        Object.assign(G, {
+          board: s.board, score: s.score || 0, streak: s.streak || 0, sizes: s.sizes,
+          shapes: s.shapes || [], held: Array.isArray(s.held) ? s.held : [],
+          turnsLeft: s.turnsLeft > 0 ? s.turnsLeft : LEVELS[level].every, turn: s.turn || 0,
+          phase: s.phase === "anim" ? "size" : s.phase, unranked: true,
+        });
+      }
+      if (G.phase === "shape" && !G.shapes.length) G.phase = "size";
+      sync();
+      phase = G.phase;
       renderBoard(); updateHud(0); renderTray();
       if (phase === "over") showOver();
     } else {
@@ -1252,8 +1290,11 @@
   const startEl = $("startScreen");
   let pickMode = mode, pickLevel = level, pickControl = control;
   const slotKeyFor = (m, l) => KEY + m + (l === 1 ? "" : "-L" + l);
-  const inProgress = (st) => !!(st && Array.isArray(st.board) && st.board.length === N * N
-    && st.phase && st.phase !== "over" && (st.score > 0 || st.turn > 0));
+  const inProgress = (st) => {
+    const g = st && (st.G || st);
+    return !!(g && Array.isArray(g.board) && g.board.length === N * N
+      && g.phase && g.phase !== "over" && (g.score > 0 || g.turn > 0));
+  };
 
   function syncStart() {
     document.querySelectorAll("#startMode button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === pickMode)));
@@ -1286,7 +1327,6 @@
     stage.querySelector(".overlay")?.remove();
     const st = store.get(slotKey());
     best = (st && st.best) || 0;
-    turnsLeft = LEVELS[level].every;
     syncMeta();
     newGame();
     save();
@@ -1313,6 +1353,7 @@
       if (!startEl.hidden) syncStart();
       if (board) renderTray(false);
       if (phase === "over" && stage.querySelector(".overlay")) showOver();
+      if (!rankModal.hidden) { renderRankName(); renderRankList(); }
     });
   } else {
     $("langBtn").hidden = true;
@@ -1320,6 +1361,7 @@
 
   function boot(data) {
     if (window.I18n) I18n.apply();
+    if (Board) Board.flush();
     const last = store.get(KEY + "mode");
     mode = (data && MODES[data.mode] && data.mode) || (MODES[last] && last) || "35";
     if (data && LEVELS[data.level]) level = data.level;

@@ -1,0 +1,72 @@
+# 순위표: 서버 규칙 적용 + 매일 밤 점수 검증
+#
+# - firestore.rules 를 고쳐서 main 에 올리면 → Firebase 에 규칙 적용
+# - 매일 03:00(한국 시간) → 검증 안 된 기록을 리플레이로 다시 돌려서 통과(✓) 또는 삭제
+# - 손으로 돌리기: GitHub 저장소 → Actions → "순위표 규칙·검증" → Run workflow
+#   (dry_run 을 켜면 지우지 않고 결과만 본다)
+#
+# 인증: 비밀 키 없음. 구글 클라우드에 "이 저장소(HN1022/dul-jung-hana)의 자동 작업은 믿는다"는
+# 신뢰 연동(Workload Identity)을 등록해 두었고, 실행할 때마다 짧게 쓰는 임시 자격증명을 받는다.
+#   풀: github / 제공자: github-actions / 서비스 계정: github-actions@either-or-130af
+name: 순위표 규칙·검증
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - firestore.rules
+      - engine.js
+      - tools/verify-scores.mjs
+      - tools/deploy-rules.mjs
+      - .github/workflows/firebase.yml
+  schedule:
+    - cron: "0 18 * * *"   # UTC 18:00 = 한국 03:00
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "지우지 않고 결과만 보기"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write   # 구글 클라우드 임시 자격증명 받기
+
+concurrency:
+  group: firebase
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 구글 클라우드 로그인 (키 없는 연동)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/204724489972/locations/global/workloadIdentityPools/github/providers/github-actions
+          service_account: github-actions@either-or-130af.iam.gserviceaccount.com
+
+      - name: 검증 도구 설치
+        run: |
+          mkdir -p /tmp/fb && cd /tmp/fb && npm init -y > /dev/null
+          npm install --no-audit --no-fund firebase-admin@12 google-auth-library@9
+          echo "NODE_PATH=/tmp/fb/node_modules" >> "$GITHUB_ENV"
+
+      - name: 규칙 적용
+        if: github.event_name != 'schedule'
+        run: |
+          ln -s /tmp/fb/node_modules node_modules
+          node tools/deploy-rules.mjs
+
+      - name: 점수 검증
+        env:
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '0' }}
+        run: |
+          [ -e node_modules ] || ln -s /tmp/fb/node_modules node_modules
+          node tools/verify-scores.mjs

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<title>순위표 관리 · 둘 중 하나</title>
+<link rel="icon" href="icons/favicon-64.png" sizes="64x64" type="image/png">
+<style>
+  /* 관리자 전용 페이지 — 3단계: 이상한 닉네임·기록을 직접 지운다.
+     삭제는 서버 규칙(firestore.rules)이 either21or@gmail.com 구글 로그인일 때만 허용한다.
+     다른 사람이 이 주소로 들어와도 목록만 보이고 지우기는 거부된다. */
+  :root { --bg: #E4EAF0; --ink: #1B2733; --muted: #5D6E7E; --panel: #F5F8FA; --line: #C9D3DC; --accent: #EE6A50; --ok: #2F9E7E; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0F151B; --ink: #E5ECF2; --muted: #8B9CAB; --panel: #19222B; --line: #2A3743; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Malgun Gothic", sans-serif; padding: 20px 16px 48px; }
+  main { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  h1 { margin: 0; font-size: 22px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .bar .who { margin-left: auto; color: var(--muted); font-size: 13px; }
+  button, select, input { font: inherit; color: inherit; }
+  button { border: 0; border-radius: 8px; padding: 7px 12px; cursor: pointer; background: var(--panel); }
+  button.primary { background: var(--accent); color: #fff; font-weight: 700; }
+  button.del { background: transparent; color: var(--accent); font-weight: 700; padding: 4px 8px; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  select, input { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+  .note { margin: 0; color: var(--muted); font-size: 13px; }
+  .msg { min-height: 20px; margin: 0; font-weight: 700; }
+  .wrap { overflow-x: auto; background: var(--panel); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  td.num { text-align: right; }
+  .ok { color: var(--ok); font-weight: 700; }
+  .pending { color: var(--muted); }
+  .flag { color: var(--accent); font-weight: 700; }
+</style>
+</head>
+<body>
+<main>
+  <h1>순위표 관리</h1>
+  <p class="note">이상한 닉네임이나 말이 안 되는 기록을 지우는 곳이에요. 지운 기록은 되돌릴 수 없어요. 조작된 기록은 매일 밤 03시 자동 검증이 알아서 지우고, ✓ 표시는 검증을 통과한 기록이에요.</p>
+  <div class="bar">
+    <button class="primary" id="login">Google 로그인</button>
+    <button id="logout" hidden>로그아웃</button>
+    <select id="filter">
+      <option value="all">전체</option>
+      <option value="pending">검증 전만</option>
+      <option value="ok">검증 통과만</option>
+    </select>
+    <input id="search" placeholder="닉네임 검색" size="12">
+    <button id="reload">새로고침</button>
+    <span class="who" id="who">로그인 안 됨 — 보기만 가능</span>
+  </div>
+  <p class="msg" id="msg"></p>
+  <div class="wrap">
+    <table>
+      <thead><tr><th>#</th><th>닉네임</th><th>점수</th><th>턴</th><th>모드</th><th>검증</th><th>올린 시각</th><th></th></tr></thead>
+      <tbody id="rows"><tr><td colspan="8">불러오는 중…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  import { getFirestore, collection, query, orderBy, limit, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const app = initializeApp({
+    apiKey: "AIzaSyCYShLF-w3Hxm3TYqZ_QVs9B29MpUewicw",
+    authDomain: "either-or-130af.firebaseapp.com",
+    projectId: "either-or-130af",
+    appId: "1:204724489972:web:96685411b473d4712758a1",
+  });
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const ADMIN = "either21or@gmail.com";
+  const $ = (id) => document.getElementById(id);
+  let rows = [];
+  let isAdmin = false;
+
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const modeName = (m) => (m === "16" ? "1~6칸" : "3~5칸");
+  const when = (ts) => (ts && ts.toDate ? ts.toDate().toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" }) : "-");
+  // 대충 이상한지 표시: 턴당 점수가 유난히 높으면 눈에 띄게
+  const suspicious = (r) => r.turns > 0 && r.score / r.turns > 400;
+
+  async function load() {
+    $("msg").textContent = "";
+    const snap = await getDocs(query(collection(db, "scores"), orderBy("score", "desc"), limit(500)));
+    rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    render();
+  }
+
+  function render() {
+    const f = $("filter").value, q = $("search").value.trim().toLowerCase();
+    const list = rows.filter((r) => (f === "all" || r.status === f) && (!q || String(r.name).toLowerCase().includes(q)));
+    $("rows").innerHTML = list.length ? list.map((r, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${esc(r.name)}</td>
+        <td class="num ${suspicious(r) ? "flag" : ""}">${r.score}</td>
+        <td class="num">${r.turns}</td>
+        <td>${modeName(r.mode)} · Lv${r.level}</td>
+        <td class="${r.status === "ok" ? "ok" : "pending"}">${r.status === "ok" ? "✓ 통과" : "검증 전"}</td>
+        <td>${when(r.at)}</td>
+        <td><button class="del" data-id="${esc(r.id)}" ${isAdmin ? "" : "disabled"}>삭제</button></td>
+      </tr>`).join("") : `<tr><td colspan="8">기록이 없어요</td></tr>`;
+  }
+
+  $("rows").addEventListener("click", async (e) => {
+    const id = e.target.closest("button.del")?.dataset.id;
+    if (!id) return;
+    const r = rows.find((x) => x.id === id);
+    if (!confirm(`"${r.name}" 의 ${r.score}점 기록을 지울까요? 되돌릴 수 없어요.`)) return;
+    try {
+      await deleteDoc(doc(db, "scores", id));
+      rows = rows.filter((x) => x.id !== id);
+      render();
+      $("msg").textContent = `지웠어요: ${r.name} ${r.score}점`;
+    } catch (err) {
+      $("msg").textContent = "지우지 못했어요: " + (err.code === "permission-denied" ? "관리자 계정으로 로그인해야 해요" : err.message);
+    }
+  });
+
+  $("login").addEventListener("click", () => signInWithPopup(auth, new GoogleAuthProvider()).catch((e) => { $("msg").textContent = "로그인 실패: " + e.message; }));
+  $("logout").addEventListener("click", () => signOut(auth));
+  $("filter").addEventListener("change", render);
+  $("search").addEventListener("input", render);
+  $("reload").addEventListener("click", () => load().catch((e) => { $("msg").textContent = "불러오기 실패: " + e.message; }));
+
+  onAuthStateChanged(auth, (u) => {
+    isAdmin = !!(u && u.email === ADMIN && u.emailVerified);
+    $("login").hidden = !!u;
+    $("logout").hidden = !u;
+    $("who").textContent = u ? (isAdmin ? `관리자: ${u.email}` : `${u.email} — 관리자가 아니라 지울 수 없어요`) : "로그인 안 됨 — 보기만 가능";
+    render();
+  });
+
+  load().catch((e) => { $("rows").innerHTML = `<tr><td colspan="8">불러오기 실패: ${esc(e.message)}</td></tr>`; });
+</script>
+</body>
+</html>

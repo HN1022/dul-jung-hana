@@ -11,7 +11,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const out = join(root, "www");
 
 // 게임에 필요한 것만. 새 파일을 추가했으면 여기에도 넣을 것.
-const FILES = ["index.html", "privacy.html", "i18n.js", "money.js", "manifest.json", "sw.js", "fonts", "icons"];
+const FILES = ["index.html", "privacy.html", "i18n.js", "money.js", "engine.js", "leaderboard.js", "manifest.json", "sw.js", "fonts", "icons"];
 
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out);

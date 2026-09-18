@@ -1,0 +1,60 @@
+// Firestore 보안 규칙 — 「둘 중 하나」 순위표
+//
+// 이 파일을 main 에 올리면 GitHub 자동 작업(.github/workflows/firebase.yml)이 Firebase 에 적용한다.
+// Firebase 콘솔의 "규칙" 화면에서 직접 고치면 다음 적용 때 이 파일 내용으로 덮어써지니, 여기서만 고칠 것.
+//
+// 1단계 검사(올릴 때 바로 거르기)를 여기서 한다:
+//   - 익명 로그인한 본인 문서만, 정해진 칸만, 닉네임 2~10자
+//   - 점수가 턴 수로 가능한 상한(engine.js 의 maxScore 와 같은 식)을 넘으면 거부
+//   - 같은 순위표 기록은 더 높은 점수로만, 10초에 한 번까지
+// 2단계(리플레이로 다시 돌려 보고 지우기)는 tools/verify-scores.mjs 가 밤마다 한다.
+// 3단계(관리자 삭제)는 admin.html — either21or@gmail.com 구글 로그인만 지울 수 있다.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'either21or@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    function mult(level) {
+      return level == 1 ? 1.0 : (level == 2 ? 1.5 : (level == 3 ? 2.0 : 3.0));
+    }
+    // 턴당 가장 비싼 블록 32점 + 줄 보너스 10×6²×연속(≤턴 수), 여기에 난이도 배율
+    function maxScore(level, t) {
+      return mult(level) * (32 * t + 180 * t * (t + 1));
+    }
+
+    function validScore(d) {
+      return d.keys().hasOnly(['uid', 'name', 'score', 'mode', 'level', 'turns', 'seed', 'slots', 'v', 'log', 'status', 'at'])
+        && d.keys().hasAll(['uid', 'name', 'score', 'mode', 'level', 'turns', 'seed', 'slots', 'v', 'log', 'status', 'at'])
+        && d.uid == request.auth.uid
+        && d.name is string && d.name.size() >= 2 && d.name.size() <= 10
+        && d.mode in ['35', '16']
+        && d.level is int && d.level >= 1 && d.level <= 4
+        && d.turns is int && d.turns >= 1 && d.turns <= 5000
+        && d.score is int && d.score > 0 && d.score <= maxScore(d.level, d.turns)
+        && d.seed is int
+        && d.slots in [1, 2]
+        && d.v is int
+        && d.log is string && d.log.size() <= 300000
+        && d.status == 'pending'
+        && d.at == request.time;
+    }
+
+    function ownId(id) {
+      return id == request.auth.uid + '_' + request.resource.data.mode + '_' + string(request.resource.data.level);
+    }
+
+    match /scores/{id} {
+      allow read: if true;
+      allow create: if request.auth != null && ownId(id) && validScore(request.resource.data);
+      allow update: if request.auth != null && ownId(id) && validScore(request.resource.data)
+        && request.resource.data.score > resource.data.score
+        && request.time > resource.data.at + duration.value(10, 's');
+      allow delete: if isAdmin();
+    }
+  }
+}

@@ -7,7 +7,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v5";   // v5: 블록 점수(크기별·★ 보너스), 틀린 그림 자동 지움 — i18n.js 가 캐시 우선이라 올려야 반영됨
+const VERSION = "v6";   // v6: 규칙 엔진(engine.js) 분리, 온라인 순위표(leaderboard.js)
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
@@ -15,6 +15,8 @@ const ASSETS = [
   "./index.html",
   "./privacy.html",
   "./i18n.js",
+  "./engine.js",
+  "./leaderboard.js",
   "./money.js",
   "./manifest.json",
   "./fonts/fonts.css",
