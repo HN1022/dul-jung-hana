@@ -898,8 +898,20 @@
   }
   const drawCap = () => items.reduce((m, it) => Math.max(m, it.p.size), 0);
 
+  // 칸 수는 다 채웠는데 모양이 틀린 그림: 손을 떼면 잠깐 빨갛게 흔들린 뒤 저절로 지워진다.
+  let badTimer = null;
+  function clearBadDrawing() {
+    clearTimeout(badTimer);
+    badTimer = null;
+    drawSet = new Set();
+    renderDraw();
+    const st = $("drawStatus");
+    if (st) { st.className = "bad"; st.textContent = t("draw_bad"); }
+  }
+
   boardEl.addEventListener("pointerdown", (e) => {
     if (phase !== "shape" || isStuck() || control !== "draw") return;
+    if (badTimer) clearBadDrawing();   // 지워지기 전에 다시 그리기 시작하면 바로 지운다
     const i = cellAt(e.clientX, e.clientY);
     if (i < 0 || board[i]) return;
     e.preventDefault();
@@ -925,6 +937,11 @@
     if (phase !== "shape") return;
     const m = matchDraw();
     if (m >= 0) commitDrawing(m);
+    else if (drawSet.size >= drawCap()) {
+      vibrate([15, 40, 15]);
+      clearTimeout(badTimer);
+      badTimer = setTimeout(() => { if (phase === "shape") clearBadDrawing(); }, 450);
+    }
   });
   window.addEventListener("pointercancel", () => { paint = null; press = null; endDrag(); });
 
