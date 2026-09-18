@@ -7,7 +7,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v4";   // v4: 개인정보처리방침 페이지 추가, 확대 차단, 영어 이름 Either Or
+const VERSION = "v5";   // v5: 블록 점수(크기별·★ 보너스), 틀린 그림 자동 지움 — i18n.js 가 캐시 우선이라 올려야 반영됨
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [

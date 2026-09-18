@@ -224,6 +224,13 @@
   .drag i { border-radius: 5px; }
   .slot.nofit { grid-template-rows: 1fr auto; }
   .tag { font-size: 11px; color: var(--muted); }
+  .sizecard .pts { font-size: 12px; font-weight: 700; color: var(--c3); }
+  .ptag {
+    position: absolute; right: 8px; bottom: 6px;
+    font-size: 11px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .ptag.tricky { color: #2B1D00; background: var(--c4); padding: 1px 7px; border-radius: 99px; }
+  .holdstar { position: absolute; left: 4px; bottom: 2px; font-size: 11px; color: var(--c4); }
 
   .status { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; }
   .status p { margin: 0; font-size: 13px; color: var(--muted); }
@@ -512,6 +519,19 @@
     for (let r = 0; r < 4; r++) { out.push(q); q = rotate(q); }
     return out;
   }
+
+  // ---- 블록 점수 ----
+  // 크기가 클수록 가파르게 오른다(삼각수). 5칸 하나가 한 줄 지우기(10점)보다 커서 큰 블록을 고를 이유가 생긴다.
+  const SIZE_POINTS = { 1: 1, 2: 3, 3: 6, 4: 10, 5: 15, 6: 21 };
+  // ★ 까다로운 모양: 칸 수에 비해 차지하는 네모 영역이 넓어서(빈틈이 많아서) 줄 채우기가 어려운 모양.
+  //   5칸: F·T·V·W·X·Z (3×3 안에 5칸), 6칸: 3×4 영역을 쓰는 모양들. 회전해도 판정은 같다.
+  const TRICKY_RATIO = 5 / 9;
+  const TRICKY_BONUS = 1.5;
+  const isTricky = (p) => p.size >= 4 && p.size / (p.w * p.h) <= TRICKY_RATIO + 1e-9;
+  const blockPoints = (p) => {
+    const base = SIZE_POINTS[p.size] || p.size;
+    return isTricky(p) ? Math.ceil(base * TRICKY_BONUS) : base;
+  };
   // Distinct pieces when mirrors count as different (L and J are separate):
   // sizes 1–6 → 1, 1, 2, 7, 18, 60 pieces. Each is equally likely.
   const PIECES = {};
@@ -723,7 +743,7 @@
         const b = document.createElement("button");
         b.type = "button";
         b.className = "slot" + (animate ? " enter" : "");
-        b.innerHTML = `<div class="sizecard"><b>${s}</b><div class="dots">${`<i style="background:var(--c${s})"></i>`.repeat(s)}</div><span class="label">${t("size_label", { n: s })}</span></div>`;
+        b.innerHTML = `<div class="sizecard"><b>${s}</b><div class="dots">${`<i style="background:var(--c${s})"></i>`.repeat(s)}</div><span class="label">${t("size_label", { n: s })}</span><span class="pts">${t("pts", { n: SIZE_POINTS[s] })}</span></div>`;
         b.addEventListener("click", () => chooseSize(s));
         tray.appendChild(b);
       });
@@ -741,6 +761,11 @@
         const longest = Math.max(p.w, p.h);
         const pe = buildPiece(p, longest >= 6 ? 15 : longest === 5 ? 18 : longest === 4 ? 21 : 24, 3);
         slot.appendChild(pe);
+        const pt = document.createElement("span");
+        pt.className = "ptag" + (isTricky(p) ? " tricky" : "");
+        pt.textContent = (isTricky(p) ? "★ " : "") + t("pts", { n: blockPoints(p) });
+        if (isTricky(p)) pt.title = t("tricky");
+        slot.appendChild(pt);
         const ok = fitsAnyRotation(p);
         if (ok && control === "drag" && phase === "shape") {
           armDrag(slot, pe, item);
@@ -808,6 +833,11 @@
         const longest = Math.max(p.w, p.h);
         const pe = buildPiece(p, longest >= 5 ? 9 : longest === 4 ? 11 : 13, 2);
         cell.appendChild(pe);
+        if (isTricky(p)) {
+          const st = document.createElement("span");
+          st.className = "holdstar"; st.textContent = "★"; st.title = t("tricky");
+          cell.appendChild(st);
+        }
         const item = items.find((it) => it.from === "h" && it.i === k);
         const ok = phase === "shape" && fitsAnyRotation(p);
         if (item) itemCards[items.indexOf(item)] = cell;
@@ -1087,7 +1117,7 @@
       const el = cellEls[i];
       el.classList.remove("placed"); void el.offsetWidth; el.classList.add("placed");
     });
-    let gained = p.size;
+    let gained = blockPoints(p);
     const { lines, idx, rows } = fullRows(board);
 
     if (lines) {
