@@ -4,6 +4,7 @@
 // 처음부터 다시 돌려 본다. 다시 돌린 점수·턴 수가 올라온 값과 같으면 "ok"(✓ 표시), 다르면 조작으로 보고 삭제.
 //
 //   DRY_RUN=1 node tools/verify-scores.mjs   → 지우거나 고치지 않고 결과만 출력
+//   바로 돌리고 싶으면: GitHub → Actions → "순위표 규칙·검증" → Run workflow (이 파일이나 engine.js 를 고쳐 올려도 돈다)
 //
 // 인증: 비밀 키 없이 GitHub ↔ 구글 클라우드 신뢰 연동(Workload Identity)으로 받은 임시 자격증명을 쓴다.
 import { readFileSync } from "node:fs";
