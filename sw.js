@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v16";   // v16: 인앱 결제 제거, 보관 2칸 무료
+const VERSION = "v17";   // v17: 게임 화면 한 화면에 맞추기
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [

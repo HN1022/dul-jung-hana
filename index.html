@@ -64,6 +64,7 @@
   [hidden] { display: none !important; }
   html, body { height: 100%; }
   body {
+    margin: 0;   /* 브라우저 기본 여백 8px — 남겨 두면 게임 화면에 스크롤이 생긴다 */
     background: var(--bg);
     color: var(--ink);
     font-family: "Noto Sans KR", system-ui, -apple-system, "Malgun Gothic", sans-serif;
@@ -82,9 +83,12 @@
     --top-gap: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
     --bottom-gap: calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + var(--ad-h, 0px));
   }
+  /* 게임 화면은 스크롤 없이 한 화면에 들어간다 — 남는 높이에 맞춰 보드가 줄어든다(긴 폰 대응) */
   .app {
     max-width: 440px;
     margin: 0 auto;
+    box-sizing: border-box;
+    min-height: 100dvh;
     padding-inline: 16px;
     padding-top: calc(var(--top-gap) + 20px);
     padding-bottom: calc(var(--bottom-gap) + 24px);
@@ -130,19 +134,21 @@
   .modes button[aria-pressed="true"] { background: var(--btn); color: var(--btn-ink); }
   @keyframes pulse { 50% { transform: scale(1.07); } }
 
-  .stage { position: relative; }
+  .stage { position: relative; flex: 1 1 0; min-height: 200px; container-type: size; display: flex; align-items: center; justify-content: center; }
   .board {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     gap: 4px;
     padding: 8px;
-    width: 100%; max-width: 100%;
+    width: 100%;   /* 옛 브라우저용 기본값 — 아래 규칙이 폭·높이 중 작은 쪽에 맞춘다 */
     box-sizing: border-box;   /* 안쪽 여백까지 100% 안에 — 없으면 보드만 오른쪽으로 16px 삐져나온다 */
     aspect-ratio: 1;
     background: var(--board);
     border-radius: 16px;
     touch-action: none;
   }
+  /* 보드는 정사각형 — 남는 폭과 남는 높이 중 작은 쪽에 맞춘다(긴 폰에서 스크롤이 안 생기게) */
+  .board { width: min(100cqw, 100cqh); }
   .board.drawing .cell[data-c=""] { cursor: crosshair; }
   @media (hover: hover) {
     .board.drawing .cell[data-c=""]:not(.ghost):hover { background: var(--cell-hover); }
@@ -201,7 +207,7 @@
   .tray.single { grid-template-columns: 1fr; }
   .slot {
     position: relative;
-    min-height: 140px;
+    min-height: clamp(104px, 17dvh, 140px);
     border-radius: 14px;
     background: var(--panel);
     display: grid; place-items: center;
@@ -347,7 +353,7 @@
   .holdbar { display: grid; grid-template-columns: repeat(var(--slots, 3), 1fr); gap: 6px 12px; align-items: stretch; }
   .holdlabel { grid-column: 1 / -1; display: flex; align-items: center; font-size: 13px; font-weight: 700; color: var(--muted); white-space: nowrap; }
   .holdslot {
-    position: relative; min-height: 66px; border-radius: 12px; padding: 5px; border: 0;
+    position: relative; min-height: clamp(54px, 8.5dvh, 66px); border-radius: 12px; padding: 5px; border: 0;
     background: var(--panel); display: grid; place-items: center; color: inherit;
     transition: box-shadow 120ms ease;
   }
@@ -532,7 +538,7 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="i18n.js?v=16"></script>
+<script src="i18n.js?v=17"></script>
 <script src="money.js?v=17"></script>
 <script src="engine.js?v=13"></script>
 <script src="leaderboard.js?v=15"></script>
@@ -559,7 +565,8 @@
 
   // ---- State ----
   let mode = "35";
-  let control = store.get(KEY + "control") === "drag" ? "drag" : "draw";
+  // 기본 조작은 끌어놓기(처음 켠 사람 기준). 한 번 바꾸면 그 선택이 저장된다.
+  let control = store.get(KEY + "control") === "draw" ? "draw" : "drag";
   const LEVELS = E.LEVELS;
   let level = LEVELS[store.get(KEY + "level")] ? Number(store.get(KEY + "level")) : 1;
   let turnsLeft = 0;
