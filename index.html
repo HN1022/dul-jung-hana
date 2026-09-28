@@ -384,7 +384,15 @@
   .start section { display: flex; flex-direction: column; gap: 8px; }
   .start h3 { margin: 0; font-size: 11.5px; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; }
   .picks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .picks.lv { grid-template-columns: repeat(4, 1fr); }
+  .picks.lv { grid-template-columns: repeat(3, 1fr); }
+  .freebtn {
+    border: 0; border-radius: 12px; padding: 10px 12px; cursor: pointer; background: var(--panel); color: var(--ink);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left;
+  }
+  .freebtn b { font-size: 14px; font-weight: 700; }
+  .freebtn span { font-size: 11.5px; color: var(--muted); }
+  .freebtn[aria-pressed="true"] { background: var(--btn); color: var(--btn-ink); }
+  .freebtn[aria-pressed="true"] span { color: var(--btn-ink); opacity: 0.72; }
   .picks button {
     border: 0; border-radius: 12px; padding: 12px 8px; cursor: pointer; background: var(--panel);
     display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--ink);
@@ -460,11 +468,13 @@
     <section>
       <h3 data-i18n="h_level">난이도</h3>
       <div class="picks lv" id="startLevel">
-        <button type="button" data-level="1" aria-pressed="true"><b>1</b><span>×1</span></button>
-        <button type="button" data-level="2" aria-pressed="false"><b>2</b><span>×1.5</span></button>
-        <button type="button" data-level="3" aria-pressed="false"><b>3</b><span>×2</span></button>
-        <button type="button" data-level="4" aria-pressed="false"><b>4</b><span>×3</span></button>
+        <button type="button" data-level="2" aria-pressed="false"><b>1</b><span>×1.5</span></button>
+        <button type="button" data-level="3" aria-pressed="false"><b>2</b><span>×2</span></button>
+        <button type="button" data-level="4" aria-pressed="true"><b>3</b><span>×3</span></button>
       </div>
+      <button type="button" class="freebtn" id="startFree" data-level="1" aria-pressed="false">
+        <b data-i18n="free_name">🕊 프리 모드</b><span data-i18n="free_sub">방해 블록 없음 · 점수 ×1</span>
+      </button>
       <p class="lvdesc" id="lvDesc"></p>
     </section>
 
@@ -539,7 +549,7 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="i18n.js?v=19"></script>
+<script src="i18n.js?v=20"></script>
 <script src="money.js?v=17"></script>
 <script src="engine.js?v=13"></script>
 <script src="leaderboard.js?v=15"></script>
@@ -569,7 +579,7 @@
   // 기본 조작은 끌어놓기(처음 켠 사람 기준). 한 번 바꾸면 그 선택이 저장된다.
   let control = store.get(KEY + "control") === "draw" ? "draw" : "drag";
   const LEVELS = E.LEVELS;
-  let level = LEVELS[store.get(KEY + "level")] ? Number(store.get(KEY + "level")) : 1;
+  let level = LEVELS[store.get(KEY + "level")] ? Number(store.get(KEY + "level")) : 4;
   let turnsLeft = 0;
   let turn = 0;   // placements this game
   // Level 1 keeps the original save slot so existing games carry over
@@ -1423,7 +1433,7 @@
       <li class="${r.uid && r.uid === me ? "me" : ""}">
         <span class="rk">${i + 1}</span>
         <span class="nm">${esc(r.name)}${r.owned ? `<span class="own" title="${esc(t("rank_owned"))}">🛡</span>` : ""}${r.verified ? `<em title="${esc(t("rank_verified"))}">✓</em>` : ""}${r.title ? `<span class="ttl">🏅 ${esc(titleText(r.title))}</span>` : ""}</span>
-        <span class="md">${esc(modeName(r.mode))}·Lv${r.level}</span>
+        <span class="md">${esc(modeName(r.mode))}·${esc(Number(r.level) === 1 ? t("free_short") : "Lv" + lvLabel(r.level))}</span>
         <b class="sc">${r.score}</b>
       </li>`).join("");
   }
@@ -1461,7 +1471,7 @@
       if (!mt.list.length) { box.hidden = true; return; }
       box.hidden = false;
       const opts = [`<option value="-1">${esc(t("title_none"))}</option>`].concat(mt.list.map((tt, i) =>
-        `<option value="${i}"${i === mt.pick ? " selected" : ""}>🏅 ${esc(titleText(tt))} · ${esc(modeName(tt.b.split("_")[0]))} Lv${esc(tt.b.split("_")[1])}</option>`));
+        `<option value="${i}"${i === mt.pick ? " selected" : ""}>🏅 ${esc(titleText(tt))} · ${esc(modeName(tt.b.split("_")[0]))} ${esc(Number(tt.b.split("_")[1]) === 1 ? t("free_short") : "Lv" + lvLabel(tt.b.split("_")[1]))}</option>`));
       box.innerHTML = `<span>${t("rank_title_pick")}</span><select id="rankTitleSel">${opts.join("")}</select><span class="err" id="rankTitleErr"></span>`;
       $("rankTitleSel").addEventListener("change", (e) => {
         Board.setTitle(Number(e.target.value)).then(loadRank).catch(() => {
@@ -1537,8 +1547,12 @@
     updateWarn();
   }
   // ---- Header: mode chip + one-tap control switch ----
+  // 저장되는 난이도 번호는 그대로(1~4) 두고 보이는 이름만 바꾼다: 1 = 프리 모드, 2·3·4 = 난이도 1·2·3
+  const lvLabel = (lv) => (Number(lv) === 1 ? t("free_short") : String(Number(lv) - 1));
   function syncMeta() {
-    $("metaText").textContent = t("meta", { mode: modeName(mode), level });
+    $("metaText").textContent = Number(level) === 1
+      ? t("meta_free", { mode: modeName(mode) })
+      : t("meta", { mode: modeName(mode), level: lvLabel(level) });
     const cb = $("controlBtn");
     cb.textContent = control === "draw" ? "✏️" : "✋";
     cb.title = t(control === "draw" ? "ctl_title_draw" : "ctl_title_drag");
@@ -1565,7 +1579,7 @@
 
   function syncStart() {
     document.querySelectorAll("#startMode button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === pickMode)));
-    document.querySelectorAll("#startLevel button").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.level) === pickLevel)));
+    document.querySelectorAll("#startLevel button, #startFree").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.level) === pickLevel)));
     document.querySelectorAll("#startControl button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.control === pickControl)));
     $("lvDesc").textContent = t("lv" + pickLevel);
     const st = store.get(slotKeyFor(pickMode, pickLevel));
@@ -1587,7 +1601,7 @@
     startEl.hidden = true;
   }
   document.querySelectorAll("#startMode button").forEach((b) => b.addEventListener("click", () => { pickMode = b.dataset.mode; syncStart(); }));
-  document.querySelectorAll("#startLevel button").forEach((b) => b.addEventListener("click", () => { pickLevel = Number(b.dataset.level); syncStart(); }));
+  document.querySelectorAll("#startLevel button, #startFree").forEach((b) => b.addEventListener("click", () => { pickLevel = Number(b.dataset.level); syncStart(); }));
   document.querySelectorAll("#startControl button").forEach((b) => b.addEventListener("click", () => { pickControl = b.dataset.control; syncStart(); }));
   $("startPlay").addEventListener("click", () => {
     applyPicks();
