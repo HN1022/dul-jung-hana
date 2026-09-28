@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v17";   // v17: 게임 화면 한 화면에 맞추기
+const VERSION = "v18";   // v18: 그리기로 놓을 때 보관 먼저
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
