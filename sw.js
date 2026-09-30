@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v22";   // v22: 안내 말풍선이 화면 밖으로 나가던 것 수정
+const VERSION = "v23";   // v23: 보관 안내가 📦 버튼까지 같이 밝힌다
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [

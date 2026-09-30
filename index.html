@@ -587,7 +587,7 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="i18n.js?v=21"></script>
+<script src="i18n.js?v=22"></script>
 <script src="money.js?v=17"></script>
 <script src="engine.js?v=13"></script>
 <script src="leaderboard.js?v=16"></script>
@@ -1593,7 +1593,7 @@
     { at: "size",  el: () => tray,    k: () => "tut_size" },
     { at: "shape", el: () => tray,    k: () => "tut_pick" },
     { at: "shape", el: () => boardEl, k: () => (control === "draw" ? "tut_draw" : "tut_drag") },
-    { at: "shape", el: () => holdBar, k: () => "tut_hold" },
+    { at: "shape", el: () => [tray, holdBar], k: () => "tut_hold" },   // 📦 버튼과 보관함을 같이
     { at: "after", el: () => boardEl, k: () => "tut_end" },
   ];
   let tutStep = -1, tutPlaced = false, tutEl = null;
@@ -1624,7 +1624,14 @@
       });
       document.body.appendChild(tutEl);
     }
-    const box = s.el().getBoundingClientRect(), pad = 6, hole = tutEl.querySelector(".hole");
+    const rects = [].concat(s.el()).map((e) => e.getBoundingClientRect());
+    const box = rects.reduce((a, r) => ({
+      left: Math.min(a.left, r.left), top: Math.min(a.top, r.top),
+      right: Math.max(a.right, r.right), bottom: Math.max(a.bottom, r.bottom),
+    }));
+    box.width = box.right - box.left;
+    box.height = box.bottom - box.top;
+    const pad = 6, hole = tutEl.querySelector(".hole");
     hole.style.left = (box.left - pad) + "px";
     hole.style.top = (box.top - pad) + "px";
     hole.style.width = (box.width + pad * 2) + "px";
