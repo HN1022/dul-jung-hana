@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v20";   // v20: 베타 테스터 칭호
+const VERSION = "v20";   // v20: 베타 테스터 칭호 + 처음 한 판 안내
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [

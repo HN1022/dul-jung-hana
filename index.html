@@ -293,6 +293,22 @@
   .legal { margin: 0; font-size: 12px; text-align: center; }
 
   /* ---- 순위표 ---- */
+  /* ---- 처음 한 판 안내 ---- */
+  .tut { position: fixed; inset: 0; z-index: 30; animation: fade 200ms ease-out; }
+  .tut .hole {
+    position: absolute; border-radius: 14px; pointer-events: none;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, .66), 0 0 0 3px #4C9AFF;
+    transition: left 220ms ease, top 220ms ease, width 220ms ease, height 220ms ease;
+  }
+  .tut .bubble {
+    position: absolute; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
+    background: var(--panel); color: var(--ink); border-radius: 16px; padding: 14px 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  }
+  .tut .bubble p { margin: 0 0 12px; font-size: 15px; line-height: 1.55; }
+  .tut .bubble .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .tut .bubble .dots { color: var(--muted); font-size: 12px; }
+
   .rank {
     position: fixed; inset: 0; z-index: 30; overflow-y: auto;
     background: var(--bg); display: flex; justify-content: center;
@@ -492,6 +508,8 @@
       <button type="button" class="btn" id="startPlay" data-i18n="new_game">새로 시작</button>
     </div>
     <button type="button" class="btn soft" id="startRank" data-i18n="rank_btn">🏆 순위표</button>
+
+    <button type="button" class="btn soft" id="startTut" data-i18n="tut_again">🎓 안내 다시 보기</button>
 
     <details class="rules">
       <summary data-i18n="rules_title">규칙 보기</summary>
@@ -877,6 +895,7 @@
     drawSet = new Set();
     vibrate(6);
     renderTray();
+    if (tutOn()) requestAnimationFrame(tutShow);
     if (G.phase === "over") endGame(900);
     save();
   }
@@ -886,6 +905,7 @@
     drawSet = new Set();
     phase = "size";
     renderTray();
+    if (tutOn()) { tutPlaced = true; requestAnimationFrame(tutShow); }
     save();
   }
 
@@ -1217,6 +1237,7 @@
 
   let overSubmit = { queued: false };
   function endGame(delay = 0) {
+    if (tutOn()) tutStop(true);
     if (Money && phase !== "over") Money.gameEnded();
     if (phase !== "over") overSubmit = Board ? Board.queue(G) : { queued: false };
     phase = "over";
@@ -1503,6 +1524,63 @@
   $("startRank").addEventListener("click", () => openRank("all"));
   if (!Board) $("startRank").hidden = true;
 
+  // ---- 처음 한 판 안내 ----
+  // 설치하고 첫 판에만 뜬다. 오버레이가 화면 전체를 덮어서 안내가 떠 있는 동안에는 게임을 만질 수 없다.
+  // 그래서 "블록을 놓아야 다음 안내"처럼 순서가 있는 단계도 꼬이지 않는다.
+  // 플레이어가 움직일 차례인 단계(at 이 지금 화면과 다를 때)는 오버레이를 잠깐 치우고 기다린다.
+  const TUT_KEY = KEY + "tut";
+  const TUT = [
+    { at: "size",  el: () => boardEl, k: () => "tut_board" },
+    { at: "size",  el: () => tray,    k: () => "tut_size" },
+    { at: "shape", el: () => tray,    k: () => "tut_pick" },
+    { at: "shape", el: () => boardEl, k: () => (control === "draw" ? "tut_draw" : "tut_drag") },
+    { at: "shape", el: () => holdBar, k: () => "tut_hold" },
+    { at: "after", el: () => boardEl, k: () => "tut_end" },
+  ];
+  let tutStep = -1, tutPlaced = false, tutEl = null;
+  const tutOn = () => tutStep >= 0;
+  const tutReady = (at) => (at === "size" ? phase === "size" : at === "shape" ? phase === "shape" : tutPlaced);
+
+  function tutStart() { tutStep = 0; tutPlaced = false; requestAnimationFrame(tutShow); }
+  function tutStop(remember) {
+    tutStep = -1;
+    tutEl?.remove(); tutEl = null;
+    if (remember) store.set(TUT_KEY, 1);
+  }
+  function tutShow() {
+    if (!tutOn()) return;
+    const s = TUT[tutStep];
+    if (!s) return tutStop(true);
+    if (!tutReady(s.at)) { tutEl?.remove(); tutEl = null; return; }   // 플레이어 차례 — 잠깐 비켜 준다
+    if (!tutEl) {
+      tutEl = document.createElement("div");
+      tutEl.className = "tut";
+      tutEl.innerHTML = '<div class="hole"></div><div class="bubble"><p></p><div class="row">'
+        + '<span class="dots"></span><span><button type="button" class="btn small" data-tut="skip"></button> '
+        + '<button type="button" class="btn small" data-tut="next"></button></span></div></div>';
+      // 오버레이 아무 데나 누르면 다음으로 (건너뛰기만 예외)
+      tutEl.addEventListener("click", (e) => {
+        if (e.target.closest('[data-tut="skip"]')) tutStop(true);
+        else { tutStep++; tutShow(); }
+      });
+      document.body.appendChild(tutEl);
+    }
+    const box = s.el().getBoundingClientRect(), pad = 6, hole = tutEl.querySelector(".hole");
+    hole.style.left = (box.left - pad) + "px";
+    hole.style.top = (box.top - pad) + "px";
+    hole.style.width = (box.width + pad * 2) + "px";
+    hole.style.height = (box.height + pad * 2) + "px";
+    // 가리키는 곳이 화면 위쪽이면 말풍선을 아래에, 아래쪽이면 위에 둔다
+    const bubble = tutEl.querySelector(".bubble"), below = box.bottom < innerHeight * 0.55;
+    bubble.style.top = below ? (box.bottom + 18) + "px" : "";
+    bubble.style.bottom = below ? "" : (innerHeight - box.top + 18) + "px";
+    bubble.querySelector("p").innerHTML = t(s.k());
+    bubble.querySelector(".dots").textContent = (tutStep + 1) + " / " + TUT.length;
+    bubble.querySelector('[data-tut="skip"]').textContent = t("tut_skip");
+    bubble.querySelector('[data-tut="next"]').textContent = t(tutStep === TUT.length - 1 ? "tut_done" : "tut_next");
+  }
+  addEventListener("resize", () => { if (tutOn() && tutEl) tutShow(); });
+
   function newGame() {
     stage.querySelector(".overlay")?.remove();
     G = E.create({ mode, level, slots });
@@ -1613,7 +1691,10 @@
     newGame();
     save();
     enterGame();
+    if (!store.get(TUT_KEY)) tutStart();   // 설치하고 첫 판에만
   });
+  // 안내 다시 보기 = 안내 표시를 지우고 새 판 시작
+  $("startTut").addEventListener("click", () => { store.set(TUT_KEY, 0); $("startPlay").click(); });
   $("startResume").addEventListener("click", () => {
     applyPicks();
     restore(store.get(slotKey()));
