@@ -1271,6 +1271,7 @@
     return t("season_label", { y, m, mon: monName(m) });
   }
   function titleText(tt) {
+    if (tt.k) return t("title_" + tt.k);   // 시즌과 상관없는 칭호 (예: 베타 테스터)
     const [y, m] = String(tt.s).split("-").map(Number);
     return t("title_label", { yy: String(y).slice(2), m, mon: monName(m), r: tt.r });
   }
@@ -1471,7 +1472,7 @@
       if (!mt.list.length) { box.hidden = true; return; }
       box.hidden = false;
       const opts = [`<option value="-1">${esc(t("title_none"))}</option>`].concat(mt.list.map((tt, i) =>
-        `<option value="${i}"${i === mt.pick ? " selected" : ""}>🏅 ${esc(titleText(tt))} · ${esc(modeName(tt.b.split("_")[0]))} ${esc(Number(tt.b.split("_")[1]) === 1 ? t("free_short") : "Lv" + lvLabel(tt.b.split("_")[1]))}</option>`));
+        `<option value="${i}"${i === mt.pick ? " selected" : ""}>🏅 ${esc(titleText(tt))}${tt.k ? "" : ` · ${esc(modeName(tt.b.split("_")[0]))} ${esc(Number(tt.b.split("_")[1]) === 1 ? t("free_short") : "Lv" + lvLabel(tt.b.split("_")[1]))}`}</option>`));
       box.innerHTML = `<span>${t("rank_title_pick")}</span><select id="rankTitleSel">${opts.join("")}</select><span class="err" id="rankTitleErr"></span>`;
       $("rankTitleSel").addEventListener("change", (e) => {
         Board.setTitle(Number(e.target.value)).then(loadRank).catch(() => {
