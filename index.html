@@ -1629,14 +1629,21 @@
     hole.style.top = (box.top - pad) + "px";
     hole.style.width = (box.width + pad * 2) + "px";
     hole.style.height = (box.height + pad * 2) + "px";
-    // 가리키는 곳이 화면 위쪽이면 말풍선을 아래에, 아래쪽이면 위에 둔다
-    const bubble = tutEl.querySelector(".bubble"), below = box.bottom < innerHeight * 0.55;
-    bubble.style.top = below ? (box.bottom + 18) + "px" : "";
-    bubble.style.bottom = below ? "" : (innerHeight - box.top + 18) + "px";
+    // 말풍선은 넓은 쪽(위/아래)에 붙이되, 화면 밖으로 밀려나지 않게 가둔다.
+    // 판처럼 큰 것을 가리킬 때 위쪽 공간이 모자라면 말풍선이 상태바 뒤로 숨어 버렸다.
+    const bubble = tutEl.querySelector(".bubble");
     bubble.querySelector("p").innerHTML = t(s.k());
     bubble.querySelector(".dots").textContent = (tutStep + 1) + " / " + TUT.length;
     bubble.querySelector('[data-tut="skip"]').textContent = t("tut_skip");
     bubble.querySelector('[data-tut="next"]').textContent = t(tutStep === TUT.length - 1 ? "tut_done" : "tut_next");
+    // 글자를 다 넣은 다음에 높이를 재야 맞다
+    bubble.style.bottom = "";
+    bubble.style.top = "0px";
+    const gap = 16, padTop = 64, padBot = 28, bh = bubble.offsetHeight;
+    const wantBelow = (innerHeight - box.bottom) >= box.top;
+    let top = wantBelow ? box.bottom + gap : box.top - gap - bh;
+    top = Math.max(padTop, Math.min(top, innerHeight - bh - padBot));
+    bubble.style.top = Math.round(top) + "px";
   }
   addEventListener("resize", () => { if (tutOn() && tutEl) tutShow(); });
 
