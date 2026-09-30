@@ -96,11 +96,13 @@ service cloud.firestore {
     // 칭호: titles/{uid} = { list: [{s, b, r}], pick }. list 는 관리자 도구(서버 권한)만 쓴다.
     match /titles/{uid} {
       allow read: if true;
+      // 본인은 대표 칭호(pick)와 프로필 비공개 여부(priv)만 바꿀 수 있다. 칭호 자체(list)는 관리자 도구만 쓴다.
       allow update: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pick'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pick', 'priv'])
         && request.resource.data.pick is int
         && request.resource.data.pick >= -1
-        && request.resource.data.pick < resource.data.list.size();
+        && request.resource.data.pick < resource.data.list.size()
+        && request.resource.data.get('priv', false) is bool;
       allow create, delete: if isAdmin();
     }
 

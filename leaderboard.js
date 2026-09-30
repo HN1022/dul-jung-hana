@@ -336,6 +336,7 @@
         mode: val(f.mode), level: val(f.level), verified: val(f.status) === "ok",
         owned: !!name && owners[nameKey(name)] === uid,
         title: tt && tt.pick >= 0 ? tt.list[tt.pick] || null : null,
+        titles: tt ? (tt.priv ? { priv: true, list: [], pick: -1 } : tt) : null,
       };
     }).sort((a, b) => b.score - a.score).slice(0, limit);
   }
@@ -347,10 +348,12 @@
     const arr = (fields.list && fields.list.arrayValue && fields.list.arrayValue.values) || [];
     const list = arr.map((v) => {
       const m = (v.mapValue && v.mapValue.fields) || {};
-      return { s: val(m.s), b: val(m.b), r: val(m.r) };
+      // 시즌 칭호는 {s, b, r}, 종류 칭호(베타 테스터 등)는 {k}
+      return { s: val(m.s), b: val(m.b), r: val(m.r), k: val(m.k) };
     });
     const pick = fields.pick ? val(fields.pick) : 0;
-    return { list, pick: typeof pick === "number" ? pick : 0 };
+    // priv = 프로필 비공개. 켜면 남이 내 칭호 모음을 볼 수 없다(대표 칭호는 순위표에 그대로).
+    return { list, pick: typeof pick === "number" ? pick : 0, priv: !!(fields.priv && val(fields.priv)) };
   };
   async function allTitles() {
     const r = await fetch(`${DOCS}:runQuery`, {
@@ -367,18 +370,19 @@
   }
   async function myTitles() {
     const uid = myUid();
-    if (!uid) return { list: [], pick: -1 };
+    if (!uid) return { list: [], pick: -1, priv: false };
     const r = await fetch(`${DOCS}/titles/${uid}`);
-    if (r.status === 404) return { list: [], pick: -1 };
+    if (r.status === 404) return { list: [], pick: -1, priv: false };
     if (!r.ok) throw new Error("titles " + r.status);
     return parseTitles((await r.json()).fields || {});
   }
-  async function setTitle(pick) {
+  // 대표 칭호와 프로필 비공개 여부를 한 번에 저장한다.
+  async function setTitle(pick, priv) {
     const a = await token();
-    const r = await fetch(`${DOCS}/titles/${a.uid}?updateMask.fieldPaths=pick&currentDocument.exists=true`, {
+    const r = await fetch(`${DOCS}/titles/${a.uid}?updateMask.fieldPaths=pick&updateMask.fieldPaths=priv&currentDocument.exists=true`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + a.idToken },
-      body: JSON.stringify({ fields: { pick: fInt(pick) } }),
+      body: JSON.stringify({ fields: { pick: fInt(pick), priv: { booleanValue: !!priv } } }),
     });
     if (!r.ok) throw new Error("setTitle " + r.status);
     return true;
