@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v23";   // v23: 보관 안내가 📦 버튼까지 같이 밝힌다
+const VERSION = "v24";   // v24: 지난달 결산 화면
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
