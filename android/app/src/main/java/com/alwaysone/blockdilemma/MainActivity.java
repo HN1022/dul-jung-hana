@@ -1,4 +1,4 @@
-package com.alwaysone.duljunghana;
+package com.alwaysone.blockdilemma;
 
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;

@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.alwaysone.duljunghana"
+    namespace = "com.alwaysone.blockdilemma"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.alwaysone.duljunghana"
+        applicationId "com.alwaysone.blockdilemma"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // 플레이스토어는 올릴 때마다 versionCode 가 커져야 한다 → GitHub 자동 빌드가 VERSION_CODE 를 넣어 준다(실행 번호 기반)
