@@ -606,9 +606,9 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="i18n.js?v=23"></script>
+<script src="i18n.js?v=24"></script>
 <script src="money.js?v=19"></script>
-<script src="engine.js?v=13"></script>
+<script src="engine.js?v=14"></script>
 <script src="leaderboard.js?v=16"></script>
 <script>
 (() => {
@@ -789,7 +789,7 @@
     buildItems();
     tray.innerHTML = "";
     tray.classList.toggle("single", phase !== "size" && phase !== "anim" && shapes.length === 1);
-    boardEl.classList.toggle("drawing", (phase === "shape" && control === "draw") || phase === "revive");
+    boardEl.classList.toggle("drawing", phase === "shape" && control === "draw");
     const step = $("stepText");
 
     if (phase === "size" || phase === "anim") {
@@ -802,16 +802,6 @@
         b.addEventListener("click", () => chooseSize(s));
         tray.appendChild(b);
       });
-    } else if (phase === "revive") {
-      step.innerHTML = t("step_revive");
-      const panel = document.createElement("div");
-      panel.className = "status";
-      panel.innerHTML = `<p id="drawStatus"></p><div class="row">
-        <button type="button" class="btn small" id="clearDraw">${t("clear")}</button>
-        <button type="button" class="btn" id="reviveOk" disabled>${t("revive_place")}</button></div>`;
-      panel.querySelector("#clearDraw").addEventListener("click", () => { drawSet = new Set(); pickMs = null; renderDraw(); });
-      panel.querySelector("#reviveOk").addEventListener("click", commitRevive);
-      tray.appendChild(panel);
     } else if (phase === "shape" || phase === "over") {
       const stuck = !items.some((it) => fitsAnyRotation(it.p));
       step.innerHTML = stuck
@@ -977,7 +967,7 @@
   const matchDraw = () => (matchDrawAll()[0] ?? -1);
   // 후보가 둘 이상이면 "어느 걸로 놓을까요?"를 물어보고 고를 때까지 그림을 남겨 둔다
   let pickMs = null;
-  const drawCap = () => (phase === "revive" ? E.REVIVE_MAX_CELLS : items.reduce((m, it) => Math.max(m, it.p.size), 0));
+  const drawCap = () => items.reduce((m, it) => Math.max(m, it.p.size), 0);
 
   // 칸 수는 다 채웠는데 모양이 틀린 그림: 손을 떼면 잠깐 빨갛게 흔들린 뒤 저절로 지워진다.
   let badTimer = null;
@@ -991,7 +981,7 @@
   }
 
   boardEl.addEventListener("pointerdown", (e) => {
-    if (phase !== "revive" && (phase !== "shape" || isStuck() || control !== "draw")) return;
+    if (phase !== "shape" || isStuck() || control !== "draw") return;
     if (badTimer) clearBadDrawing();   // 지워지기 전에 다시 그리기 시작하면 바로 지운다
     pickMs = null;
     const i = cellAt(e.clientX, e.clientY);
@@ -1122,21 +1112,6 @@
     clearPreview();
     tray.querySelectorAll(".slot.match").forEach((el) => el.classList.remove("match"));
     holdBar.querySelectorAll(".holdslot.match").forEach((el) => el.classList.remove("match"));
-    if (phase === "revive") {
-      const n = drawSet.size;
-      const ok = n >= 1 && n <= E.REVIVE_MAX_CELLS && connected(drawSet);
-      boardEl.style.setProperty("--gc", `var(--c${Math.max(1, n)})`);
-      drawSet.forEach((i) => cellEls[i].classList.add("ghost"));
-      if (ok) previewClear(n);
-      const st = $("drawStatus");
-      if (st) {
-        st.className = ok ? "ok" : "";
-        st.textContent = n === 0 ? t("revive_start") : !connected(drawSet) ? t("draw_apart") : t("revive_count", { n });
-      }
-      const b = $("reviveOk");
-      if (b) b.disabled = !ok;
-      return;
-    }
     if (phase !== "shape" || !items.length) return;
     const n = drawSet.size, cap = drawCap();
     const m = matchDraw();
@@ -1198,23 +1173,15 @@
   const REVIVE_PER_DAY = 2;
   const reviveDayKey = () => KEY + "revive-" + new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
   const revivesLeftToday = () => Math.max(0, REVIVE_PER_DAY - (store.get(reviveDayKey()) || 0));
-  function startRevive() {
-    stage.querySelector(".overlay")?.remove();
-    phase = "revive";
-    drawSet = new Set();
-    renderTray(false);
-  }
-  function commitRevive() {
-    if (phase !== "revive") return;
-    const pts = drawnPoints();
-    if (!pts.length) return;
-    const ax = Math.min(...pts.map((q) => q[0])), ay = Math.min(...pts.map((q) => q[1]));
-    const res = E.revive(G, pts, ax, ay);
-    if (!res) return;
+  // 광고를 보고 나면 엔진이 무작위로 2~3줄을 지워 준다. 몇 줄인지는 결과 애니메이션에서 보인다.
+  function doRevive() {
+    const res = E.revive(G);
+    if (!res) return false;
     store.set(reviveDayKey(), (store.get(reviveDayKey()) || 0) + 1);
-    drawSet = new Set();
+    stage.querySelector(".overlay")?.remove();
     clearPreview();
     showResult(res);
+    return true;
   }
 
   // 한 수의 결과(엔진이 계산)를 애니메이션으로: 놓기 → 줄 지우기 → 내려오기 → 방해 블록 → 다음 턴
@@ -1309,7 +1276,7 @@
       e.currentTarget.disabled = true;
       // 앱: 보상형 광고. 광고가 안 떠도(재고 없음·오프라인) 이어하기는 허용한다.
       if (Money && Money.isApp && !Money.state.removeAds && Money.showRewarded) await Money.showRewarded();
-      startRevive();
+      if (!doRevive()) e.currentTarget.disabled = false;
     });
     stage.appendChild(o);
     renderOverRank(o.querySelector("#overRank"));

@@ -14,14 +14,21 @@
  */
 (function (root) {
   "use strict";
-  // 규칙 버전. 1 = 처음 규칙, 2 = 이어하기 추가(그 외 규칙은 1 과 같음).
+  // 규칙 버전. 1 = 처음 규칙, 2 = 이어하기 추가, 3 = 이어하기 방식 변경(아래).
   // 검증기는 SUPPORTED 에 있는 버전을 모두 다시 돌릴 수 있다(판마다 st.v 에 그 판의 버전이 남는다).
-  const VERSION = 2;
-  const SUPPORTED = [1, 2];
-  // 이어하기: 게임오버(놓을 곳 없음) 때 빈칸에 1~3칸을 직접 그려서 놓고 계속한다. 한 판에 1번.
+  const VERSION = 3;
+  const SUPPORTED = [1, 2, 3];
+  // 이어하기: 게임오버(놓을 곳 없음) 때 한 판에 1번 쓸 수 있다.
   // (하루 2번 제한과 광고는 화면·money.js 가 맡는다 — 규칙 쪽은 "판당 1번"만 지킨다)
+  //   버전 2: 빈칸에 1~3칸을 직접 그려서 놓았다. 테스터들이 "이득이 없다"고 했다 — 한 칸 더 놓아 봐야
+  //           바로 다시 막혀서, 광고를 볼 값어치가 없었다.
+  //   버전 3: 무작위로 2~3줄을 지운다. 몇 줄이 터질지도 무작위라 뽑기 같은 재미가 있다.
+  //           점수는 주지 않는다(광고로 점수를 살 수 있으면 랭킹이 망가진다).
+  //           줄 수와 어느 줄인지 둘 다 seed 에서 나오므로 리플레이에서 똑같이 재현된다.
   const REVIVE_PER_GAME = 1;
-  const REVIVE_MAX_CELLS = 3;
+  const REVIVE_MAX_CELLS = 3;   // 버전 2 전용(옛 기록 검증에만 쓴다)
+  const REVIVE_ROWS_MIN = 2;    // 버전 3: 지우는 줄 수는 이 사이에서 무작위
+  const REVIVE_ROWS_MAX = 3;
   const N = 8;
   const MODES = { "35": { min: 3, max: 5 }, "16": { min: 1, max: 6 } };
   // 방해 블록: every 턴마다 count 칸. mult = 점수 배율
@@ -295,8 +302,7 @@
     return { p, placedIdx, gained, lines, streak: st.streak, clearIdx: idx, falls, boardPlaced, boardCleared, garbage, turn: st.turn };
   }
 
-  // 이어하기 (규칙 버전 2부터). 게임오버 상태에서 빈칸에 1~3칸(가로·세로로 붙은 모양)을 그려 놓는다.
-  // 블록 점수는 없고, 줄을 지우면 줄 점수는 평소처럼. 그다음은 한 턴이 끝난 것과 같다(방해 블록·새 크기 선택).
+  // 이어하기 (규칙 버전 2부터). 한 판에 1번, 게임오버 상태에서만.
   const canRevive = (st) => st.v >= 2 && st.phase === "over" && (st.revives || 0) < REVIVE_PER_GAME;
   function connectedCells(cells) {
     const key = (x, y) => x + "," + y;
@@ -312,8 +318,45 @@
     }
     return seen.size === all.size;
   }
-  function revive(st, cells, ax, ay) {
-    if (!canRevive(st) || !cells || cells.length < 1 || cells.length > REVIVE_MAX_CELLS) return null;
+  // 버전 3 이어하기: 2~3줄(무작위)을 뽑아 지우고 위를 내린다. 블록이 있는 줄 중에서만 고른다
+  // — 빈 줄이 뽑히면 아무 일도 안 일어나서 광고를 본 보람이 없다.
+  // 점수는 0. 그다음은 한 턴이 끝난 것과 같다(방해 블록·새 크기 선택).
+  function reviveRows(st) {
+    if (!canRevive(st) || st.v < 3) return null;
+    const candidates = [];
+    for (let r = 0; r < N; r++) {
+      for (let c = 0; c < N; c++) if (st.board[r * N + c]) { candidates.push(r); break; }
+    }
+    if (!candidates.length) return null;
+
+    // ⚠️ rand 를 부르는 순서와 횟수가 바뀌면 옛 기록이 다르게 재현된다. 줄 수 먼저, 그다음 줄.
+    const span = REVIVE_ROWS_MAX - REVIVE_ROWS_MIN + 1;
+    const want = REVIVE_ROWS_MIN + Math.floor(rand(st) * span);
+    const rows = [];
+    while (rows.length < want && candidates.length) {
+      rows.push(candidates.splice(Math.floor(rand(st) * candidates.length), 1)[0]);
+    }
+    rows.sort((a, b) => a - b);
+
+    st.log.push("v");   // 어느 줄인지는 적지 않는다 — seed 에서 똑같이 나온다
+    st.revives = (st.revives || 0) + 1;
+    st.streak = 0;   // 내가 이어서 만든 줄이 아니니 연속 보너스는 여기서 끊는다
+
+    const boardPlaced = st.board.slice();
+    const idx = [];
+    rows.forEach((r) => { for (let c = 0; c < N; c++) idx.push(r * N + c); });
+    const c = collapse(st.board, rows);
+    st.board = c.board;
+    const boardCleared = st.board.slice();
+    const garbage = endTurn(st);
+    // placedIdx 가 비어 있고 gained 가 0인 것 말고는 한 수를 둔 결과와 모양이 같다(화면이 그대로 그린다).
+    return { p: null, placedIdx: [], gained: 0, lines: rows.length, streak: st.streak,
+             clearIdx: idx, falls: c.falls, boardPlaced, boardCleared, garbage, turn: st.turn };
+  }
+
+  // 버전 2 이어하기(옛 기록 검증 전용). 빈칸에 1~3칸을 그려 놓고, 줄이 지워지면 줄 점수를 받았다.
+  function reviveDraw(st, cells, ax, ay) {
+    if (!canRevive(st) || st.v !== 2 || !cells || cells.length < 1 || cells.length > REVIVE_MAX_CELLS) return null;
     const n = normalize(cells);
     if (new Set(n.map((c) => c.join(","))).size !== n.length || !connectedCells(n)) return null;
     const p = mk(n.length, n);
@@ -406,9 +449,12 @@
       else if (a[0] === "s") ok = !!store(st, Number(a.slice(1)));
       else if (a[0] === "k") { const n = Number(a.slice(1)); ok = n === 1 || n === 2; if (ok) setSlots(st, n); }
       else if (a[0] === "v") {
-        const parts = a.slice(1).split(".");
-        const pos = parts[1] || "";
-        ok = pos.length === 2 && !!revive(st, decodeCells(parts[0] || ""), Number(pos[0]), Number(pos[1]));
+        if (a.length === 1) ok = !!reviveRows(st);          // 버전 3: 무작위 두 줄
+        else {                                               // 버전 2: 그려서 놓기
+          const parts = a.slice(1).split(".");
+          const pos = parts[1] || "";
+          ok = pos.length === 2 && !!reviveDraw(st, decodeCells(parts[0] || ""), Number(pos[0]), Number(pos[1]));
+        }
       }
       else if (a[0] === "p") {
         const parts = a.split(".");
@@ -423,12 +469,16 @@
     return { ok: true, score: st.score, turn: st.turn, phase: st.phase };
   }
 
+  // 화면은 이것만 부른다. 버전 3은 인자가 없고, 버전 2 기록은 검증기가 그린 칸을 넘겨준다.
+  const revive = (st, cells, ax, ay) => (st.v >= 3 ? reviveRows(st) : reviveDraw(st, cells, ax, ay));
+
   // 한 판에서 나올 수 있는 점수의 느슨한 상한(서버 규칙과 같은 식). 이보다 크면 볼 것도 없이 거짓.
   // 턴당: 가장 비싼 블록 32점 + 줄 보너스 10×(최대 6줄)²×연속(≤턴 수), 여기에 난이도 배율.
   const maxScore = (level, turns) => Math.ceil(LEVELS[level].mult * (32 * turns + 360 * turns * (turns + 1) / 2));
 
   const Engine = {
     VERSION, SUPPORTED, N, MODES, LEVELS, GROWTH_TURNS, REVIVE_MAX_CELLS,
+    REVIVE_ROWS_MIN, REVIVE_ROWS_MAX,
     create, chooseSize, place, store, setSlots, rotateItem, replay, revive, canRevive,
     items, isStuck, fits, anyFit, fitsAnyRotation, fullRows,
     mk, normalize, rotate, rotations, blockPoints, isTricky, SIZE_POINTS,

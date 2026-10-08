@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v26";   // v26: 전면광고 뺌
+const VERSION = "v27";   // v27: 이어하기 = 무작위 2~3줄 지우기
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
