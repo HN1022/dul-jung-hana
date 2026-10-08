@@ -69,10 +69,19 @@
   // 색을 덮으면 크기 구분이 사라져서 게임이 안 된다.
   // 한 번에 세 개까지만 입힌다. 여섯 개를 다 금속으로 하면 질감으로 크기를 가려야 하는데 색보다 훨씬 어렵다.
   const MAT_KEY = "duljunghana-v3-mats";
-  const MATS = ["holo", "gold", "silver", "bronze"];   // 좋은 것부터
+  const RANK_MATS = ["holo", "gold", "silver", "bronze"];   // 좋은 것부터 — 지난달 순위로 받는다
+  // 테스터 에디션은 순위와 무관하다. 비공개 테스트에 참여한 사람만 가지며, 순위표에는 나오지 않는다
+  // (순위표 줄 박스는 등급만 보여 준다 — 거긴 "이번 달 성적" 자리라서).
+  const MATS = ["tester"].concat(RANK_MATS);                // 고르기 목록에 보이는 순서
   const MAT_MAX = 3;
   // 등급을 받으면 그보다 낮은 재질도 다 쓸 수 있다(홀로그램이면 금·은·동도).
-  const matsOf = (tier) => (own.all ? MATS.slice() : (MATS.indexOf(tier) < 0 ? [] : MATS.slice(MATS.indexOf(tier))));
+  function matsOf(tier) {
+    const out = [];
+    if (own.all || own.owned.indexOf("tester") >= 0) out.push("tester");
+    if (own.all) return out.concat(RANK_MATS);
+    const i = RANK_MATS.indexOf(tier);
+    return i < 0 ? out : out.concat(RANK_MATS.slice(i));
+  }
 
   let myTier = null;                 // 지난달 순위에서 나온 내 등급
   let mats = {};                     // { 크기(1~6): 재질id }
@@ -112,7 +121,7 @@
     ownedYears,
     yearNow,
     // 재질
-    MATS, MAT_MAX,
+    MATS, RANK_MATS, MAT_MAX,
     tier: () => myTier,
     setTier(t) { myTier = t; pruneMats(); return myTier; },
     canUse: (m) => matsOf(myTier).indexOf(m) >= 0,

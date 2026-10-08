@@ -361,6 +361,12 @@
   :root[data-mat6="silver"] { --matbg6: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
   :root[data-mat6="bronze"] { --matbg6: linear-gradient(150deg, #FFD9B4, #D59055 35%, #8C5524 60%, #F5C79B); }
 
+  :root[data-mat1="tester"] { --matbg1: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
+  :root[data-mat2="tester"] { --matbg2: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
+  :root[data-mat3="tester"] { --matbg3: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
+  :root[data-mat4="tester"] { --matbg4: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
+  :root[data-mat5="tester"] { --matbg5: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
+  :root[data-mat6="tester"] { --matbg6: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
   .cell[data-c="1"], .blk.c1 { background-image: var(--matbg1, none); }
   .cell[data-c="2"], .blk.c2 { background-image: var(--matbg2, none); }
   .cell[data-c="3"], .blk.c3 { background-image: var(--matbg3, none); }
@@ -445,7 +451,9 @@
   .matpick button.on { background: var(--accent); color: #06261D; font-weight: 800; }
   .matpick button[disabled] { opacity: .35; cursor: default; }
   .matsample { width: 26px; height: 26px; border-radius: 6px; flex: none; position: relative; background: var(--c4); }
+  .matsample::after { background-repeat: no-repeat; }
   .matsample::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+  .matsample.tester::after { background-image: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
   .matsample.holo::after { background-image: linear-gradient(115deg, rgba(255,0,128,.9), rgba(255,214,0,.9), rgba(0,255,170,.9), rgba(0,170,255,.9), rgba(170,0,255,.9)); mix-blend-mode: hard-light; opacity: .62; }
   .matsample.gold::after { background-image: linear-gradient(150deg, #FFF3B0, #E8B23A 28%, #8C5A12 52%, #FFE07A 74%, #C8901F); mix-blend-mode: soft-light; }
   .matsample.silver::after { background-image: linear-gradient(150deg, #FFFFFF, #C9D4DC 28%, #6A7884 52%, #F2F6F9 74%, #9AA7B2); mix-blend-mode: soft-light; }
@@ -795,8 +803,8 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="themes.js?v=10"></script>
-<script src="i18n.js?v=29"></script>
+<script src="themes.js?v=11"></script>
+<script src="i18n.js?v=31"></script>
 <script src="money.js?v=19"></script>
 <script src="engine.js?v=15"></script>
 <script src="leaderboard.js?v=17"></script>
@@ -2165,9 +2173,13 @@
     const tier = Themes.tier();
     const mats = Themes.mats();
     const used = Object.keys(mats).length;
-    $("matNote").textContent = Themes.isAll() ? t("mat_all")
+    const hasTester = Themes.canUse("tester");
+    const base = Themes.isAll() ? t("mat_all")
       : tier ? t("mat_have", { tier: t("mat_" + tier), n: Themes.MAT_MAX })
+      : hasTester ? t("mat_only_tester", { n: Themes.MAT_MAX })
       : t("mat_none");
+    // 등급도 같이 가진 사람에게만 덧붙인다 — 테스터만 있으면 앞 문장이 이미 같은 말이다
+    $("matNote").textContent = base + (hasTester && tier && !Themes.isAll() ? " · " + t("mat_tester_note") : "");
     Themes.MATS.forEach((m) => {
       if (!Themes.canUse(m)) return;
       const at = Object.keys(mats).find((k) => mats[k] === m);

@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v36";   // v36: 테마 미리보기·월 문양·재질 블록색
+const VERSION = "v37";   // v37: 테스터 에디션 재질
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [

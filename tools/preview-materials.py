@@ -41,8 +41,8 @@ MARKS = {k: v.replace('"', "&quot;")
          for k, v in grab(r':root\[data-theme-mark="(\w+)"\] \{ --themark: (url\(".*?"\)); \}',
                           "월 테마 문양").items()}
 
-NAMES = {"holo": "홀로그램", "gold": "금", "silver": "은", "bronze": "동"}
-ORDER = ["holo", "gold", "silver", "bronze"]
+NAMES = {"tester": "테스터 에디션", "holo": "홀로그램", "gold": "금", "silver": "은", "bronze": "동"}
+ORDER = ["holo", "gold", "silver", "bronze"]   # 순위표에 나오는 것만 (테스터는 블록 전용)
 
 
 def blocks(colors, mats, mark):
@@ -62,6 +62,7 @@ def section(title, colors, mark):
         ("은 하나", {5: "silver"}),
         ("금·은", {4: "gold", 5: "silver"}),
         ("홀로그램·금·은 (최대 3개)", {3: "holo", 4: "gold", 5: "silver"}),
+        ("테스터 에디션 (순위와 무관)", {4: "tester"}),
     ]
     body = "".join('<tr><th>%s</th><td>%s</td></tr>' % (label, blocks(colors, mats, mark))
                    for label, mats in rows)
