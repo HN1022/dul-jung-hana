@@ -121,6 +121,10 @@
     }
   }
   const makePiece = (st, size) => mk(size, pick(st, pick(st, PIECES[size])));
+  // 그 크기에서 나올 수 있는 서로 다른 블록(회전해서 같은 건 하나로 친다). 화면에서 "경우의 수"를 보여줄 때 쓴다.
+  // 규칙이 아니라 보여 주기용이라 기록·점수와는 아무 상관이 없다.
+  const shapesOf = (size) => (PIECES[size] || []).map((g) => mk(size, g[0]));
+  const shapeCount = (size) => (PIECES[size] || []).length;
 
   // ---- 점수 ----
   // 크기가 클수록 가파르게(삼각수). ★ 까다로운 모양(칸 수 / 차지하는 네모 영역 ≤ 5/9)은 1.5배 올림.
@@ -481,7 +485,7 @@
     REVIVE_ROWS_MIN, REVIVE_ROWS_MAX,
     create, chooseSize, place, store, setSlots, rotateItem, replay, revive, canRevive,
     items, isStuck, fits, anyFit, fitsAnyRotation, fullRows,
-    mk, normalize, rotate, rotations, blockPoints, isTricky, SIZE_POINTS,
+    mk, normalize, rotate, rotations, blockPoints, isTricky, SIZE_POINTS, shapesOf, shapeCount,
     encodeCells, decodeCells, newSeed, maxScore, metaOf,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = Engine;
