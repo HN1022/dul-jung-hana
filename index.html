@@ -803,7 +803,7 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="themes.js?v=12"></script>
+<script src="themes.js?v=13"></script>
 <script src="i18n.js?v=32"></script>
 <script src="money.js?v=19"></script>
 <script src="engine.js?v=15"></script>
@@ -2219,19 +2219,26 @@
     themePrev = null;
     renderThemes(); renderThemePrev(); renderBoard(); renderTray(false);
   });
-  $("startTheme").addEventListener("click", () => {
-    themePrev = null;
-    renderThemes(); renderThemePrev(); renderMats();
-    $("themeModal").hidden = false;
-  });
-  $("themeClose").addEventListener("click", () => {
+  // 뒤로가기로 닫아도 미리보기를 되돌려야 하므로 닫는 일을 한 곳에 모은다.
+  function closeTheme() {
     if (themePrev) { Themes.revert(); themePrev = null; }   // 쓰기를 안 눌렀으면 되돌린다
     $("themeModal").hidden = true;
     renderBoard(); renderTray(false);
+  }
+  $("startTheme").addEventListener("click", () => {
+    themePrev = null;
+    renderThemes(); renderThemePrev(); renderMats();
+    if ($("themeModal").hidden) Nav.push("theme", closeTheme);
+    $("themeModal").hidden = false;
   });
+  $("themeClose").addEventListener("click", () => { if (Nav.top() === "theme") Nav.back(); else closeTheme(); });
 
-  $("startDex").addEventListener("click", () => { buildDex(); $("dexModal").hidden = false; });
-  $("dexClose").addEventListener("click", () => { $("dexModal").hidden = true; });
+  $("startDex").addEventListener("click", () => {
+    buildDex();
+    if ($("dexModal").hidden) Nav.push("dex", () => { $("dexModal").hidden = true; });
+    $("dexModal").hidden = false;
+  });
+  $("dexClose").addEventListener("click", () => { if (Nav.top() === "dex") Nav.back(); else $("dexModal").hidden = true; });
 
   $("startTut").addEventListener("click", () => { store.set(TUT_KEY, 0); $("startPlay").click(); });
   $("startResume").addEventListener("click", () => {
