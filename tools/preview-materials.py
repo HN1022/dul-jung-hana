@@ -17,7 +17,7 @@ pal = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pal)
 
 BASE = pal.PALETTES[0][1]
-AUTUMN = next(p for p in pal.PALETTES if p[0] == "10월 단풍")[1]
+AUTUMN = next(p for p in pal.PALETTES if p[0] == "10월 할로윈")[1]
 
 # index.html 에서  :root[data-mat1="gold"] { --mk1: url("...") }  꼴을 뽑는다
 css = io.open(os.path.join(ROOT, "index.html"), encoding="utf-8").read()
@@ -83,7 +83,7 @@ __AUTUMN__
 <ul>__NAMES__</ul>
 """
 html = (html.replace("__BASE__", grid("기본 팔레트", BASE))
-            .replace("__AUTUMN__", grid("10월 단풍", AUTUMN))
+            .replace("__AUTUMN__", grid("10월 할로윈", AUTUMN))
             .replace("__NAMES__", names))
 
 out = os.path.join(HERE, "material-preview.html")

@@ -20,21 +20,21 @@
 (() => {
   const KEY = "duljunghana-v3-theme";
   const THEMES = [
-    { id: "base", icon: "🧱", month: 0, c: ["#009AAC", "#81CFFF", "#52B085", "#EF835D", "#D4B5B7", "#8689B1"] },
-    { id: "cvd", icon: "👁", month: 0, c: ["#009E9E", "#00D2FF", "#49B26D", "#C17D4D", "#FF7583", "#96A3D8"] },
+    { id: "base", icon: "🧱", month: 0, c: ["#009E9F", "#A8C5C4", "#3AC781", "#D96A6B", "#E69EBE", "#43C0FD"] },
+    { id: "cvd", icon: "👁", month: 0, c: ["#769493", "#00C2FF", "#58AC72", "#D07937", "#DBBCBC", "#7A8DCD"] },
     { id: "tester", icon: "🏅", month: -1, c: ["#FF8F68", "#C67E1F", "#FFADBA", "#A9837F", "#D4C1B4", "#EC568A"] },
-    { id: "m1", icon: "❄️", month: 1, c: ["#1A9CA0", "#00D7FC", "#B3C7E6", "#A1B6AB", "#009AE3", "#00DEC8"] },
-    { id: "m2", icon: "🌺", month: 2, c: ["#FFAECD", "#EC5685", "#99D593", "#8C917F", "#F99C84", "#A69099"] },
-    { id: "m3", icon: "🌼", month: 3, c: ["#EFA276", "#FFA6B0", "#9F906C", "#ADBC40", "#E95F56", "#529F69"] },
-    { id: "m4", icon: "🌸", month: 4, c: ["#A875DF", "#E55BA1", "#FFA7F9", "#B7BCFF", "#A48B8B", "#71B347"] },
-    { id: "m5", icon: "🌹", month: 5, c: ["#D2C64B", "#849A57", "#9C8F80", "#B7C7B5", "#F1AE66", "#32E09D"] },
-    { id: "m6", icon: "💠", month: 6, c: ["#5798DC", "#00D6FF", "#C1C3ED", "#A2BDB8", "#918999", "#00A28E"] },
-    { id: "m7", icon: "🌊", month: 7, c: ["#79918C", "#00A069", "#81D5CA", "#00B0D5", "#E28C6E", "#7BDB79"] },
-    { id: "m8", icon: "🎆", month: 8, c: ["#E9BC94", "#EE5872", "#C37F1C", "#F67C52", "#9C9783", "#FFB1B4"] },
-    { id: "m9", icon: "🍁", month: 9, c: ["#CBBDFF", "#BE70D5", "#7091E9", "#A5909D", "#FFB28C", "#A0A759"] },
-    { id: "m10", icon: "🎃", month: 10, c: ["#E6636F", "#D85FB6", "#9F8883", "#FFA98A", "#FFA8C7", "#D0C572"] },
-    { id: "m11", icon: "🍂", month: 11, c: ["#FF97D1", "#DBC0BF", "#FFAD65", "#ED5876", "#E36C44", "#9F8876"] },
-    { id: "m12", icon: "🎄", month: 12, c: ["#F1B6CB", "#FD6584", "#8D9A8B", "#70B246", "#FFB091", "#CF64BF"] },
+    { id: "m1", icon: "❄️", month: 1, c: ["#559A9B", "#00D7FE", "#009ADE", "#00DDC9", "#A7B6C6", "#FE897F"] },
+    { id: "m2", icon: "🌺", month: 2, c: ["#E558A0", "#EDB8C8", "#9A8792", "#74B06F", "#FD7777", "#EA98FF"] },
+    { id: "m3", icon: "🌼", month: 3, c: ["#ED5E60", "#9F8881", "#DC7736", "#FFB19D", "#C6B466", "#FF94BC"] },
+    { id: "m4", icon: "🌸", month: 4, c: ["#CC7AE0", "#E9588B", "#978897", "#F3B2CE", "#B4C0FF", "#BBBF80"] },
+    { id: "m5", icon: "🌹", month: 5, c: ["#FFA8C3", "#D2B8FE", "#A38B8F", "#C26EC8", "#799A51", "#E5626E"] },
+    { id: "m6", icon: "💠", month: 6, c: ["#37CFFF", "#BDC2D5", "#0094E9", "#73969C", "#9083CE", "#3ED4C5"] },
+    { id: "m7", icon: "🌊", month: 7, c: ["#049C99", "#0096CB", "#A4BEB9", "#00D8FF", "#00DDAF", "#F68F6C"] },
+    { id: "m8", icon: "🎆", month: 8, c: ["#FF96A2", "#F6834E", "#8EB540", "#30C2C6", "#90B3FF", "#D181C8"] },
+    { id: "m9", icon: "🍁", month: 9, c: ["#EC5C61", "#FF9ABA", "#FFA88B", "#9E8980", "#B3B96A", "#00BACA"] },
+    { id: "m10", icon: "🎃", month: 10, c: ["#A68C89", "#AABFFF", "#B4A028", "#A27BCF", "#F796C0", "#00B5BA"] },
+    { id: "m11", icon: "🍂", month: 11, c: ["#F9B4AC", "#9F8787", "#EA7249", "#EE5C83", "#BFB07B", "#00D5F2"] },
+    { id: "m12", icon: "🎄", month: 12, c: ["#E95790", "#C1A8AD", "#9AA797", "#94CE6C", "#CD7A5D", "#FF9BEE"] },
   ];
   const byId = (id) => THEMES.find((t) => t.id === id) || THEMES[0];
   // 한국 시간 기준. 시즌·이어하기 횟수와 같은 기준을 쓴다.

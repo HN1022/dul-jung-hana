@@ -19,7 +19,9 @@
 #   "정상·적색맹·녹색맹 세 경우 모두에서 가장 가까운 두 색의 거리"가 최대가 되는 쪽으로 옮긴다.
 #   계절 느낌이 너무 날아가지 않게 기준 색상에서 멀어지면 점수를 깎는다.
 import importlib.util
+import io
 import math
+import os
 import random
 import sys
 
@@ -46,7 +48,7 @@ MOODS = [
     #   한 가지 색으로만 채우면 크기 구분이 깨지므로, 어느 테마든 받쳐 주는 색 두어 개를 섞어 둔다.
     ("기본",         [195, 205, 155,  25, 350, 250], 2.0, 1.0),
     ("색약",         [195, 230, 150,  60,  20, 285], 3.0, 1.0),
-    ("1월 설경",     [200, 215, 230, 185, 250, 165], 0.0, 4.0),
+    ("1월 설경",     [200, 215, 235, 185, 255,  30], 0.0, 3.0),   # 얼음빛 다섯 + 따뜻한 한 점
     ("2월 동백",     [350, 358, 340, 140,  15, 320], 0.0, 4.0),
     ("3월 개나리",   [ 50,  45,  55,  38,  95,  25], 0.0, 5.5),   # 노랑을 꽉 붙든다
     ("4월 벚꽃",     [335, 345, 325, 350, 290, 110], 0.0, 4.0),
@@ -54,9 +56,9 @@ MOODS = [
     ("6월 수국",     [265, 280, 250, 215, 300, 185], 0.0, 4.0),
     ("7월 바다",     [195, 205, 185, 215, 170,  45], 0.0, 4.0),
     ("8월 불꽃놀이", [ 20,  50, 120, 200, 280, 330], 0.0, 0.8),   # 원래 여러 색이라 풀어 둔다
-    ("9월 단풍",     [ 20,  10,  35,  45,   0,  60], 0.0, 4.5),
-    ("10월 할로윈",  [ 28, 290,  95, 310, 352, 262], 0.0, 4.0),
-    ("11월 낙엽",    [ 30,  22,  40,  15,  48,   8], 0.0, 4.5),
+    ("9월 단풍",     [ 20,   8,  38,  50, 110, 205], 0.0, 3.0),   # 붉은 잎 넷 + 아직 푸른 잎 + 가을 하늘
+    ("10월 할로윈",  [ 28, 290,  95, 310, 352, 200], 0.0, 3.5),
+    ("11월 낙엽",    [ 30,  18,  45,   8,  95, 215], 0.0, 3.0),   # 갈색 넷 + 마른 풀 + 늦가을 하늘
     ("12월 성탄",    [355,   5, 140, 130,  45, 345], 0.0, 4.0),
 ]
 
@@ -148,36 +150,46 @@ if __name__ == "__main__":
     out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "palettes.py")
     header = io.open(out_path, encoding="utf-8").read().split("PALETTES = [")[0]
     rows = []
+    NL = chr(10)
 
     def flush():
-        with io.open(out_path, "w", encoding="utf-8", newline="
-") as f:
-            f.write(header + "PALETTES = [
-" + "".join(rows) + "]
-")
+        with io.open(out_path, "w", encoding="utf-8", newline=NL) as f:
+            f.write(header + "PALETTES = [" + NL + "".join(rows) + "]" + NL)
 
     for name, hues, cvd, pull in MOODS:
         if want and want != name:
             continue
-        colors = None
-        for seed in range(1, 13):           # 씨앗을 바꿔 가며 조건에 맞는 것을 찾는다
+        colors, used_seed, bestcvd = None, 0, -1
+        for seed in range(1, 13):           # 씨앗을 바꿔 가며 조건에 맞는 것을 모은다
             c, _ = make(name, hues, cvd, pull, seed=seed, rounds=12000)
-            bad = [x for x in cp.check(name, c) if cvd > 0 or not x.startswith(("[적색맹", "[녹색맹"))]
-            if not bad:
-                colors = c
-                break
+            bad = [x for x in cp.check(name, c)
+                   if cvd > 0 or not x.startswith(("[적색맹", "[녹색맹"))]
+            if bad:
+                continue
+            # 월 테마는 색약을 요구하지 않지만, 같은 값이면 덜 나쁜 쪽이 낫다
+            g = [cp.hex_rgb(x) for x in c]
+            worst = min(min(cp.de2000(cp.simulate(g[i], m), cp.simulate(g[j], m))
+                            for i in range(6) for j in range(i + 1, 6))
+                        for m in ("적색맹", "녹색맹"))
+            if worst > bestcvd:
+                colors, used_seed, bestcvd = c, seed, worst
+            if cvd > 0:
+                break                       # 기본·색약 테마는 첫 합격으로 충분하다
+        seed = used_seed
         if colors is None:
-            print("✗ %s — 조건을 못 맞췄어요. 기준 색상이나 붙드는 세기를 손봐야 합니다." % name, flush=True)
+            print("X %s — 조건을 못 맞췄어요. 기준 색상이나 붙드는 세기를 손봐야 합니다." % name, flush=True)
             continue
         rgb = [cp.hex_rgb(x) for x in colors]
-        mn = lambda m: min(cp.de2000(*((rgb[i], rgb[j]) if m is None
-                                       else (cp.simulate(rgb[i], m), cp.simulate(rgb[j], m))))
-                           for i in range(6) for j in range(i + 1, 6))
-        rows.append('    ("%s", %s, %s),
-' % (name, str(colors).replace("'", '"'), cvd > 0))
+
+        def mn(m, rgb=rgb):
+            pairs = [(rgb[i], rgb[j]) for i in range(6) for j in range(i + 1, 6)]
+            if m:
+                pairs = [(cp.simulate(a, m), cp.simulate(b, m)) for a, b in pairs]
+            return min(cp.de2000(a, b) for a, b in pairs)
+
+        rows.append('    ("%s", %s, %s),' % (name, str(colors).replace("'", '"'), cvd > 0) + NL)
         flush()
-        print("✓ %-14s 정상 %.1f · 적색맹 %.1f · 녹색맹 %.1f (seed %d)"
+        print("OK %-14s 정상 %.1f · 적색맹 %.1f · 녹색맹 %.1f (seed %d)"
               % (name, mn(None), mn("적색맹"), mn("녹색맹"), seed), flush=True)
 
-    print("
-tools/palettes.py 에 %d개 썼습니다." % len(rows), flush=True)
+    print(NL + "tools/palettes.py 에 %d개 썼습니다." % len(rows), flush=True)
