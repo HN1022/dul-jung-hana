@@ -341,9 +341,14 @@
     }).sort((a, b) => b.score - a.score).slice(0, limit);
   }
 
-  // ---- 칭호 ----
-  // titles/{uid} = { list: [{ s: "2026-09", b: "35_1", r: 1 }, ...], pick: 고른 칭호 번호(-1 = 안 달기) }
-  // list 는 관리자 도구만 쓰고, 본인은 pick 만 바꿀 수 있다(firestore.rules).
+  // ---- 칭호와 테마 소유 ----
+  // titles/{uid} = {
+  //   list: [{ s: "2026-09", b: "35_1", r: 1 }, ...],   칭호
+  //   pick: 고른 칭호 번호(-1 = 안 달기),  priv: 프로필 비공개,
+  //   owned: ["m10-2026", "tester", ...],              영구 소장한 테마
+  //   all: true                                         개발자 — 전부 해금
+  // }
+  // list·owned·all 은 관리자 도구만 쓰고, 본인은 pick 과 priv 만 바꿀 수 있다(firestore.rules).
   const parseTitles = (fields) => {
     const arr = (fields.list && fields.list.arrayValue && fields.list.arrayValue.values) || [];
     const list = arr.map((v) => {
@@ -352,8 +357,14 @@
       return { s: val(m.s), b: val(m.b), r: val(m.r), k: val(m.k) };
     });
     const pick = fields.pick ? val(fields.pick) : 0;
+    const ow = (fields.owned && fields.owned.arrayValue && fields.owned.arrayValue.values) || [];
     // priv = 프로필 비공개. 켜면 남이 내 칭호 모음을 볼 수 없다(대표 칭호는 순위표에 그대로).
-    return { list, pick: typeof pick === "number" ? pick : 0, priv: !!(fields.priv && val(fields.priv)) };
+    return {
+      list, pick: typeof pick === "number" ? pick : 0,
+      priv: !!(fields.priv && val(fields.priv)),
+      owned: ow.map(val).filter((x) => typeof x === "string"),
+      all: !!(fields.all && val(fields.all)),
+    };
   };
   async function allTitles() {
     const r = await fetch(`${DOCS}:runQuery`, {
@@ -370,9 +381,9 @@
   }
   async function myTitles() {
     const uid = myUid();
-    if (!uid) return { list: [], pick: -1, priv: false };
+    if (!uid) return { list: [], pick: -1, priv: false, owned: [], all: false };
     const r = await fetch(`${DOCS}/titles/${uid}`);
-    if (r.status === 404) return { list: [], pick: -1, priv: false };
+    if (r.status === 404) return { list: [], pick: -1, priv: false, owned: [], all: false };
     if (!r.ok) throw new Error("titles " + r.status);
     return parseTitles((await r.json()).fields || {});
   }
@@ -388,9 +399,38 @@
     return true;
   }
 
+  // ---- 등수 등급 ----
+  // 홀로그램·금·은·동은 가진 물건이 아니라 "이번 달 내 순위"에서 바로 나온다. 그래서 서버에 저장하지 않는다.
+  // 순위표가 모드×난이도로 나뉘어 있으니, 그 사람이 올라 있는 순위표 중 가장 좋은 비율을 쓴다.
+  // 비율로 보는 이유: 등수를 고정하면(예: 30등 안) 사람이 적을 때 전원이 최고 등급이 된다.
+  const TIERS = [
+    { id: "holo", max: 0.05 },
+    { id: "gold", max: 0.20 },
+    { id: "silver", max: 0.50 },
+    { id: "bronze", max: 1.00 },   // 그 달에 기록을 올린 사람 전원
+  ];
+  // rows = top() 이 준 줄들. { uid: 등급id } 를 돌려준다.
+  function tiers(rows) {
+    const boards = {};
+    (rows || []).forEach((d) => { (boards[`${d.mode}_${d.level}`] ||= []).push(d); });
+    const best = {};
+    Object.values(boards).forEach((list) => {
+      const n = list.length;
+      list.forEach((d, i) => {
+        const p = (i + 1) / n;                      // 1등이면 1/n, 꼴찌면 1
+        if (best[d.uid] === undefined || p < best[d.uid]) best[d.uid] = p;
+      });
+    });
+    const out = {};
+    Object.entries(best).forEach(([uid, p]) => {
+      out[uid] = (TIERS.find((t) => p <= t.max) || TIERS[TIERS.length - 1]).id;
+    });
+    return out;
+  }
+
   // 인터넷이 다시 연결되면 밀린 기록을 보낸다
   if (typeof window !== "undefined") window.addEventListener("online", () => { flush(); });
 
   window.Board = { checkName, getName, setName, saveName, queue, flush, top, myUid, pendingCount, isPending,
-    linkGoogle, googleInfo, GOOGLE_CLIENT_ID, seasonNow, seasons, myTitles, setTitle };
+    linkGoogle, googleInfo, GOOGLE_CLIENT_ID, seasonNow, seasons, myTitles, setTitle, tiers, TIERS };
 })();

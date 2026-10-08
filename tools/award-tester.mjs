@@ -1,7 +1,8 @@
 // 베타 테스터 칭호 주기 — 비공개 테스트에 참여한 사람들에게 한 번만 준다 (.github/workflows/tester-title.yml)
 //
 // 시즌 칭호(award-titles.mjs)와 달리 등수와 상관없이, 기록을 한 번이라도 올린 사람 모두에게 준다.
-//   titles/{uid} = { list: [{ k: "tester" }, ...], pick: 달고 있는 칭호 번호 }
+//   titles/{uid} = { list: [{ k: "tester" }, ...], pick: 달고 있는 칭호 번호, owned: ["tester", ...] }
+// 칭호와 함께 **테스터 전용 테마**(금빛 팔레트)도 같이 준다. 이 테마는 다른 방법으로는 얻을 수 없다.
 // 화면에는 "베타 테스터"로 보인다(글자는 i18n.js 의 title_tester). 같은 칭호를 두 번 주지 않으니 다시 돌려도 안전.
 //
 //   UNTIL=2026-10-31 DRY_RUN=1 node tools/award-tester.mjs   → 누구에게 줄지 출력만
@@ -40,12 +41,17 @@ for (const uid of people.keys()) {
   const ref = db.collection("titles").doc(uid);
   await db.runTransaction(async (tx) => {
     const cur = await tx.get(ref);
-    const list = cur.exists ? cur.data().list || [] : [];
-    if (list.some((t) => t.k === "tester")) return;   // 이미 줌
-    list.push({ k: "tester" });
-    const pick = cur.exists && typeof cur.data().pick === "number" ? cur.data().pick : 0;
-    tx.set(ref, { list, pick });
+    const data = cur.exists ? cur.data() : {};
+    const list = data.list || [];
+    const owned = data.owned || [];
+    const hadTitle = list.some((t) => t.k === "tester");
+    const hadTheme = owned.includes("tester");
+    if (hadTitle && hadTheme) return;                 // 이미 줌
+    if (!hadTitle) list.push({ k: "tester" });
+    if (!hadTheme) owned.push("tester");
+    const pick = typeof data.pick === "number" ? data.pick : 0;
+    tx.set(ref, { list, pick, owned }, { merge: true });
     given++;
   });
 }
-console.log(`새로 준 칭호 ${given}개`);
+console.log(`새로 준 사람 ${given}명 (칭호 + 테스터 테마)`);

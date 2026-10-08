@@ -93,10 +93,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 칭호: titles/{uid} = { list: [{s, b, r}], pick }. list 는 관리자 도구(서버 권한)만 쓴다.
+    // 칭호와 테마 소유: titles/{uid} = { list: [{s,b,r}], pick, priv, owned: ["m10-2026", "tester"], all }
+    //   list  — 칭호. 관리자 도구(서버 권한)만 쓴다.
+    //   owned — 영구 소장한 테마. 월 테마는 그달에 기록을 올리면 월말 스크립트가 넣어 준다.
+    //   all   — 개발자 전체 해금. 관리자 도구만 쓴다.
+    // 재질(홀로그램·금·은·동)은 여기 없다. 지난달 순위에서 바로 계산하므로 저장할 것이 없다.
     match /titles/{uid} {
       allow read: if true;
-      // 본인은 대표 칭호(pick)와 프로필 비공개 여부(priv)만 바꿀 수 있다. 칭호 자체(list)는 관리자 도구만 쓴다.
+      // 본인은 대표 칭호(pick)와 프로필 비공개 여부(priv)만 바꿀 수 있다.
+      // list·owned·all 은 손댈 수 없다 — affectedKeys().hasOnly 가 막는다.
       allow update: if request.auth != null && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pick', 'priv'])
         && request.resource.data.pick is int

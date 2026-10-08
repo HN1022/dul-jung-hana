@@ -1,0 +1,54 @@
+# 월 테마 소장 주기 — 한 달이 끝나면 손으로 돌린다
+#
+# GitHub 저장소 → Actions → "월 테마 소장 주기" → Run workflow
+#   season:  2026-10 처럼. 그 달에 검증 통과한 기록을 올린 사람 모두가 그 달 테마를 영구 소장한다
+#   dry_run: 켜면 누가 받을지 목록만 보여 주고 실제로 주지 않는다 → 먼저 이걸로 확인
+#
+# 등수와 무관하다. 등수 보상은 칭호(titles.yml)와 재질(순위에서 바로 계산)이 맡는다.
+name: 월 테마 소장 주기
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "시즌 (예: 2026-10)"
+        required: true
+      dry_run:
+        description: "목록만 보기 (실제로 주지 않음)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: firebase
+  cancel-in-progress: false
+
+jobs:
+  award:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 구글 클라우드 로그인 (키 없는 연동)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/204724489972/locations/global/workloadIdentityPools/github/providers/github-actions
+          service_account: github-actions@either-or-130af.iam.gserviceaccount.com
+      - name: 도구 설치
+        run: |
+          mkdir -p /tmp/fb && cd /tmp/fb && npm init -y > /dev/null
+          npm install --no-audit --no-fund @google-cloud/firestore@7 google-auth-library@9
+          ln -s /tmp/fb/node_modules "$GITHUB_WORKSPACE/node_modules"
+      - name: 테마 주기
+        env:
+          SEASON: ${{ inputs.season }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: |
+          set -o pipefail
+          node tools/award-themes.mjs 2> err.txt | tee out.txt || { echo "::error::테마 주기 실패: $(tr '\n' ' ' < err.txt | cut -c1-3000)"; exit 1; }
+          { echo '```'; cat out.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

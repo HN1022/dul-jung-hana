@@ -324,6 +324,68 @@
   .tut .bubble .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .tut .bubble .dots { color: var(--muted); font-size: 12px; }
 
+  /* ---- 재질 (등수 보상) ----
+     지난달 순위로 정해지는 보상. 블록 색을 덮지 않고 그 위에 광택만 얹는다 —
+     색을 덮으면 크기 구분이 사라져서 게임이 안 된다. 한 번에 세 개까지만 입힌다.
+     themes.js 가 :root 에 data-mat{크기}="재질" 을 붙였다 뗀다. DOM 은 손대지 않는다. */
+  .blk { position: relative; }
+  :root[data-mat1="holo"] { --mat1: linear-gradient(115deg, rgba(255,0,128,.9) 0%, rgba(255,214,0,.9) 18%, rgba(0,255,170,.9) 36%, rgba(0,170,255,.9) 54%, rgba(170,0,255,.9) 72%, rgba(255,0,128,.9) 100%); --mb1: hard-light; --mo1: .62; }
+  :root[data-mat1="gold"] { --mat1: linear-gradient(150deg, #FFF3B0 0%, #E8B23A 28%, #8C5A12 52%, #FFE07A 74%, #C8901F 100%); --mb1: soft-light; --mo1: .95; }
+  :root[data-mat1="silver"] { --mat1: linear-gradient(150deg, #FFFFFF 0%, #C9D4DC 28%, #6A7884 52%, #F2F6F9 74%, #9AA7B2 100%); --mb1: soft-light; --mo1: .95; }
+  :root[data-mat1="bronze"] { --mat1: linear-gradient(150deg, #FFD9B0 0%, #C87A3C 30%, #70401A 55%, #EFB37A 78%, #A05F28 100%); --mb1: soft-light; --mo1: .95; }
+  :root[data-mat2="holo"] { --mat2: linear-gradient(115deg, rgba(255,0,128,.9) 0%, rgba(255,214,0,.9) 18%, rgba(0,255,170,.9) 36%, rgba(0,170,255,.9) 54%, rgba(170,0,255,.9) 72%, rgba(255,0,128,.9) 100%); --mb2: hard-light; --mo2: .62; }
+  :root[data-mat2="gold"] { --mat2: linear-gradient(150deg, #FFF3B0 0%, #E8B23A 28%, #8C5A12 52%, #FFE07A 74%, #C8901F 100%); --mb2: soft-light; --mo2: .95; }
+  :root[data-mat2="silver"] { --mat2: linear-gradient(150deg, #FFFFFF 0%, #C9D4DC 28%, #6A7884 52%, #F2F6F9 74%, #9AA7B2 100%); --mb2: soft-light; --mo2: .95; }
+  :root[data-mat2="bronze"] { --mat2: linear-gradient(150deg, #FFD9B0 0%, #C87A3C 30%, #70401A 55%, #EFB37A 78%, #A05F28 100%); --mb2: soft-light; --mo2: .95; }
+  :root[data-mat3="holo"] { --mat3: linear-gradient(115deg, rgba(255,0,128,.9) 0%, rgba(255,214,0,.9) 18%, rgba(0,255,170,.9) 36%, rgba(0,170,255,.9) 54%, rgba(170,0,255,.9) 72%, rgba(255,0,128,.9) 100%); --mb3: hard-light; --mo3: .62; }
+  :root[data-mat3="gold"] { --mat3: linear-gradient(150deg, #FFF3B0 0%, #E8B23A 28%, #8C5A12 52%, #FFE07A 74%, #C8901F 100%); --mb3: soft-light; --mo3: .95; }
+  :root[data-mat3="silver"] { --mat3: linear-gradient(150deg, #FFFFFF 0%, #C9D4DC 28%, #6A7884 52%, #F2F6F9 74%, #9AA7B2 100%); --mb3: soft-light; --mo3: .95; }
+  :root[data-mat3="bronze"] { --mat3: linear-gradient(150deg, #FFD9B0 0%, #C87A3C 30%, #70401A 55%, #EFB37A 78%, #A05F28 100%); --mb3: soft-light; --mo3: .95; }
+  :root[data-mat4="holo"] { --mat4: linear-gradient(115deg, rgba(255,0,128,.9) 0%, rgba(255,214,0,.9) 18%, rgba(0,255,170,.9) 36%, rgba(0,170,255,.9) 54%, rgba(170,0,255,.9) 72%, rgba(255,0,128,.9) 100%); --mb4: hard-light; --mo4: .62; }
+  :root[data-mat4="gold"] { --mat4: linear-gradient(150deg, #FFF3B0 0%, #E8B23A 28%, #8C5A12 52%, #FFE07A 74%, #C8901F 100%); --mb4: soft-light; --mo4: .95; }
+  :root[data-mat4="silver"] { --mat4: linear-gradient(150deg, #FFFFFF 0%, #C9D4DC 28%, #6A7884 52%, #F2F6F9 74%, #9AA7B2 100%); --mb4: soft-light; --mo4: .95; }
+  :root[data-mat4="bronze"] { --mat4: linear-gradient(150deg, #FFD9B0 0%, #C87A3C 30%, #70401A 55%, #EFB37A 78%, #A05F28 100%); --mb4: soft-light; --mo4: .95; }
+  :root[data-mat5="holo"] { --mat5: linear-gradient(115deg, rgba(255,0,128,.9) 0%, rgba(255,214,0,.9) 18%, rgba(0,255,170,.9) 36%, rgba(0,170,255,.9) 54%, rgba(170,0,255,.9) 72%, rgba(255,0,128,.9) 100%); --mb5: hard-light; --mo5: .62; }
+  :root[data-mat5="gold"] { --mat5: linear-gradient(150deg, #FFF3B0 0%, #E8B23A 28%, #8C5A12 52%, #FFE07A 74%, #C8901F 100%); --mb5: soft-light; --mo5: .95; }
+  :root[data-mat5="silver"] { --mat5: linear-gradient(150deg, #FFFFFF 0%, #C9D4DC 28%, #6A7884 52%, #F2F6F9 74%, #9AA7B2 100%); --mb5: soft-light; --mo5: .95; }
+  :root[data-mat5="bronze"] { --mat5: linear-gradient(150deg, #FFD9B0 0%, #C87A3C 30%, #70401A 55%, #EFB37A 78%, #A05F28 100%); --mb5: soft-light; --mo5: .95; }
+  :root[data-mat6="holo"] { --mat6: linear-gradient(115deg, rgba(255,0,128,.9) 0%, rgba(255,214,0,.9) 18%, rgba(0,255,170,.9) 36%, rgba(0,170,255,.9) 54%, rgba(170,0,255,.9) 72%, rgba(255,0,128,.9) 100%); --mb6: hard-light; --mo6: .62; }
+  :root[data-mat6="gold"] { --mat6: linear-gradient(150deg, #FFF3B0 0%, #E8B23A 28%, #8C5A12 52%, #FFE07A 74%, #C8901F 100%); --mb6: soft-light; --mo6: .95; }
+  :root[data-mat6="silver"] { --mat6: linear-gradient(150deg, #FFFFFF 0%, #C9D4DC 28%, #6A7884 52%, #F2F6F9 74%, #9AA7B2 100%); --mb6: soft-light; --mo6: .95; }
+  :root[data-mat6="bronze"] { --mat6: linear-gradient(150deg, #FFD9B0 0%, #C87A3C 30%, #70401A 55%, #EFB37A 78%, #A05F28 100%); --mb6: soft-light; --mo6: .95; }
+
+  .cell[data-c="1"]::after, .blk.c1::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background-image: var(--mat1, none); mix-blend-mode: var(--mb1, soft-light); opacity: var(--mo1, 1);
+  }
+  .cell[data-c="2"]::after, .blk.c2::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background-image: var(--mat2, none); mix-blend-mode: var(--mb2, soft-light); opacity: var(--mo2, 1);
+  }
+  .cell[data-c="3"]::after, .blk.c3::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background-image: var(--mat3, none); mix-blend-mode: var(--mb3, soft-light); opacity: var(--mo3, 1);
+  }
+  .cell[data-c="4"]::after, .blk.c4::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background-image: var(--mat4, none); mix-blend-mode: var(--mb4, soft-light); opacity: var(--mo4, 1);
+  }
+  .cell[data-c="5"]::after, .blk.c5::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background-image: var(--mat5, none); mix-blend-mode: var(--mb5, soft-light); opacity: var(--mo5, 1);
+  }
+  .cell[data-c="6"]::after, .blk.c6::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background-image: var(--mat6, none); mix-blend-mode: var(--mb6, soft-light); opacity: var(--mo6, 1);
+  }
+
+  /* 순위표 이름에 입히는 재질 — 글자 자체를 금속처럼 */
+  .mt { background-clip: text; -webkit-background-clip: text; color: transparent; font-weight: 800; }
+  .mt.holo { background-image: linear-gradient(100deg, #FF4FA3, #FFD400, #35FFC0, #35B8FF, #B45CFF, #FF4FA3); }
+  .mt.gold { background-image: linear-gradient(100deg, #FFF0A8, #E0A92C, #FFE68A, #B07D18); }
+  .mt.silver { background-image: linear-gradient(100deg, #FFFFFF, #AEBBC6, #F0F5F8, #8894A0); }
+  .mt.bronze { background-image: linear-gradient(100deg, #FFD3A4, #B9702F, #F0B583, #8A5220); }
+
   /* 테마 고르기 */
   .themelist { display: flex; flex-direction: column; gap: 8px; }
   .themeitem {
@@ -340,6 +402,22 @@
   .themeitem .tn { flex: 1; font-size: 14px; font-weight: 700; }
   .themeitem .tn small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
   .themeitem .mark { font-size: 12px; color: var(--accent); font-weight: 700; flex: none; }
+  .themeitem .yrs { font-size: 11px; color: var(--muted); font-weight: 400; }
+  .rankh { margin: 18px 0 0; font-size: 16px; font-weight: 800; }
+  .matrow { display: flex; align-items: center; gap: 8px; background: var(--panel); border-radius: 12px; padding: 10px 12px; }
+  .matrow .mn { flex: 1; font-size: 14px; font-weight: 700; }
+  .matrow .chip.on { background: var(--accent); color: #06261D; }
+  .matpick { display: flex; gap: 4px; flex-wrap: wrap; }
+  .matpick button { border: 0; border-radius: 8px; padding: 4px 8px; font: inherit; font-size: 12px;
+    background: var(--cell); color: var(--ink); cursor: pointer; }
+  .matpick button.on { background: var(--accent); color: #06261D; font-weight: 800; }
+  .matpick button[disabled] { opacity: .35; cursor: default; }
+  .matsample { width: 26px; height: 26px; border-radius: 6px; flex: none; position: relative; background: var(--c4); }
+  .matsample::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+  .matsample.holo::after { background-image: linear-gradient(115deg, rgba(255,0,128,.9), rgba(255,214,0,.9), rgba(0,255,170,.9), rgba(0,170,255,.9), rgba(170,0,255,.9)); mix-blend-mode: hard-light; opacity: .62; }
+  .matsample.gold::after { background-image: linear-gradient(150deg, #FFF3B0, #E8B23A 28%, #8C5A12 52%, #FFE07A 74%, #C8901F); mix-blend-mode: soft-light; }
+  .matsample.silver::after { background-image: linear-gradient(150deg, #FFFFFF, #C9D4DC 28%, #6A7884 52%, #F2F6F9 74%, #9AA7B2); mix-blend-mode: soft-light; }
+  .matsample.bronze::after { background-image: linear-gradient(150deg, #FFD9B0, #C87A3C 30%, #70401A 55%, #EFB37A 78%, #A05F28); mix-blend-mode: soft-light; }
 
   /* 블록 도감 — 크기마다 나올 수 있는 모양 전부 */
   .dex { display: flex; flex-direction: column; gap: 18px; }
@@ -618,6 +696,9 @@
     </div>
     <p class="tag" data-i18n="theme_note">블록 색만 바뀌어요. 달마다 다른 테마가 열리고, 그달에만 쓸 수 있어요.</p>
     <div class="themelist" id="themeList"></div>
+    <h3 class="rankh" data-i18n="mat_title">재질</h3>
+    <p class="tag" id="matNote"></p>
+    <div class="themelist" id="matList"></div>
   </div>
 </div>
 
@@ -674,11 +755,11 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="themes.js?v=2"></script>
-<script src="i18n.js?v=26"></script>
+<script src="themes.js?v=3"></script>
+<script src="i18n.js?v=27"></script>
 <script src="money.js?v=19"></script>
 <script src="engine.js?v=15"></script>
-<script src="leaderboard.js?v=16"></script>
+<script src="leaderboard.js?v=17"></script>
 <script>
 (() => {
   const N = 8;
@@ -1531,7 +1612,7 @@
     list.innerHTML = rows.map((r, i) => `
       <li class="${r.uid && r.uid === me ? "me" : ""}">
         <span class="rk">${i + 1}</span>
-        <span class="nm"><button type="button" class="nmbtn" data-prof="${i}">${esc(r.name)}${r.owned ? `<span class="own" title="${esc(t("rank_owned"))}">🛡</span>` : ""}${r.verified ? `<em title="${esc(t("rank_verified"))}">✓</em>` : ""}${r.title ? `<span class="ttl">🏅 ${esc(titleText(r.title))}</span>` : ""}</button></span>
+        <span class="nm"><button type="button" class="nmbtn" data-prof="${i}"><span class="${matClass(r.uid)}">${esc(r.name)}</span>${r.owned ? `<span class="own" title="${esc(t("rank_owned"))}">🛡</span>` : ""}${r.verified ? `<em title="${esc(t("rank_verified"))}">✓</em>` : ""}${r.title ? `<span class="ttl">🏅 ${esc(titleText(r.title))}</span>` : ""}</button></span>
         <span class="md">${esc(modeName(r.mode))}·${esc(Number(r.level) === 1 ? t("free_short") : "Lv" + lvLabel(r.level))}</span>
         <b class="sc">${r.score}</b>
       </li>`).join("");
@@ -1958,9 +2039,15 @@
         + `<span class="sw">${th.c.map((c) => `<i style="background:${c}"></i>`).join("")}</span>`;
       const nm = document.createElement("span");
       nm.className = "tn";
-      nm.innerHTML = esc(t("theme_" + th.id)) + "<small>" + esc(
-        th.month === 0 ? t("theme_always") : can ? t("theme_open_now") : t("theme_locked", { m: th.month })
-      ) + "</small>";
+      const yrs = Themes.ownedYears(th.id);
+      // 소장한 해는 '26 처럼 붙여 준다. 같은 단풍이어도 해마다 다른 수집품이다.
+      const tail = yrs.length ? ` <span class="yrs">${yrs.map((y) => "'" + String(y).slice(2)).join(" ")}</span>` : "";
+      const sub = th.month === -1 ? t(can ? "theme_tester_got" : "theme_tester_no")
+        : th.month === 0 ? t("theme_always")
+        : yrs.length ? t("theme_owned")
+        : can ? t("theme_open_now")
+        : t("theme_locked", { m: th.month });
+      nm.innerHTML = esc(t("theme_" + th.id)) + tail + "<small>" + esc(sub) + "</small>";
       b.appendChild(nm);
       if (on) {
         const m = document.createElement("span");
@@ -1972,7 +2059,76 @@
       box.appendChild(b);
     });
   }
-  $("startTheme").addEventListener("click", () => { renderThemes(); $("themeModal").hidden = false; });
+  // 서버에서 소장 목록과 등급을 받아 온다. 인터넷이 없거나 로그인 전이면 조용히 넘어가고,
+  // 그래도 기본·색약·이번 달 테마는 쓸 수 있다.
+  //
+  // 재질 등급은 **지난달** 최종 순위로 정한다. 이번 달 순위로 하면 월초에 몇 명 없을 때
+  // 전원이 홀로그램이 되고, 하루하루 등급이 오르내려서 보상처럼 느껴지지 않는다.
+  let rankTiers = {};          // 지난달 기준 { uid: 등급 } — 순위표 이름에도 쓴다
+  // 순위표 닉네임에 입히는 재질. 지난달 등급이 그대로 보인다 — 멀리서도 "쟤 홀로그램이네" 가 보인다.
+  const matClass = (uid) => (uid && rankTiers[uid] ? "mt " + rankTiers[uid] : "");
+  function loadUnlocks() {
+    if (!window.Board || !window.Themes) return;
+    Board.myTitles().then((mt) => {
+      Themes.setOwned({ owned: mt.owned, all: mt.all });
+    }).catch(() => {});
+    const all = Board.seasons();
+    const prev = all.length >= 2 ? all[all.length - 2] : null;
+    if (!prev) return;
+    Board.top(2000, prev).then((rows) => {
+      rankTiers = Board.tiers(rows);
+      Themes.setTier(rankTiers[Board.myUid()] || null);
+    }).catch(() => {});
+  }
+
+  // 재질 — 지난달 순위로 정해진 등급만큼 쓸 수 있다. 어느 크기에 입힐지는 본인이 고른다.
+  function renderMats() {
+    const box = $("matList");
+    box.textContent = "";
+    const tier = Themes.tier();
+    const mats = Themes.mats();
+    const used = Object.keys(mats).length;
+    $("matNote").textContent = Themes.isAll() ? t("mat_all")
+      : tier ? t("mat_have", { tier: t("mat_" + tier), n: Themes.MAT_MAX })
+      : t("mat_none");
+    Themes.MATS.forEach((m) => {
+      if (!Themes.canUse(m)) return;
+      const at = Object.keys(mats).find((k) => mats[k] === m);
+      const row = document.createElement("div");
+      row.className = "matrow";
+      row.innerHTML = `<span class="matsample ${m}"></span><span class="mn">${esc(t("mat_" + m))}</span>`;
+      const pick = document.createElement("div");
+      pick.className = "matpick";
+      for (let n = 0; n <= 6; n++) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = n === 0 ? t("mat_off") : t("mat_size", { n });
+        const on = n === 0 ? !at : String(n) === at;
+        if (on) b.classList.add("on");
+        // 다른 재질이 이미 쓰는 칸이거나, 세 개를 다 썼으면 더 못 붙인다
+        const taken = n > 0 && mats[n] && mats[n] !== m;
+        const full = n > 0 && !at && used >= Themes.MAT_MAX;
+        if (taken || full) b.disabled = true;
+        b.addEventListener("click", () => {
+          Themes.setMat(n, n === 0 ? null : m);
+          renderMats();
+          renderBoard();
+          renderTray(false);
+        });
+        pick.appendChild(b);
+      }
+      row.appendChild(pick);
+      box.appendChild(row);
+    });
+    if (!box.children.length) {
+      const p = document.createElement("p");
+      p.className = "tag";
+      p.textContent = t("mat_empty");
+      box.appendChild(p);
+    }
+  }
+
+  $("startTheme").addEventListener("click", () => { renderThemes(); renderMats(); $("themeModal").hidden = false; });
   $("themeClose").addEventListener("click", () => { $("themeModal").hidden = true; });
 
   $("startDex").addEventListener("click", () => { buildDex(); $("dexModal").hidden = false; });
@@ -2017,6 +2173,7 @@
     // A fresh load lands on the menu; a hot reload keeps you where you were
     if (!(data && data.state)) openStart();
     maybeRecap();
+    loadUnlocks();
   }
 
   window.claude?.hot?.snapshot?.(() => ({ mode, level, state: snapshotState() }));
