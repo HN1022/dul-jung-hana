@@ -2,50 +2,56 @@
 #
 #   python tools/preview-materials.py   →  tools/material-preview.html
 #
-# 홀로그램·금·은·동이 블록 색 위에 어떻게 얹히는지 크게 본다.
-# 재질은 색을 덮지 않고 광택만 더한다 — 색을 덮으면 크기 구분이 사라져서 게임이 안 된다.
-# 그래서 "여섯 색이 여전히 서로 달라 보이는가"를 눈으로 확인하는 것이 이 페이지의 목적이다.
+# 재질은 블록 가운데에 문양을 얹는다. 색은 건드리지 않는다 — 크기를 색으로 알아보는 게 규칙이라서.
+# 문양은 index.html 의 CSS 에서 그대로 읽어 온다. 두 군데서 따로 관리하면 반드시 어긋난다.
 import importlib.util
 import io
 import os
+import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+
 spec = importlib.util.spec_from_file_location("palettes", os.path.join(HERE, "palettes.py"))
 pal = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pal)
 
-BASE = pal.PALETTES[0][1]        # 기본 팔레트
+BASE = pal.PALETTES[0][1]
 AUTUMN = next(p for p in pal.PALETTES if p[0] == "10월 단풍")[1]
 
-MATS = [
-    ("없음", "none", "normal", "1"),
-    ("홀로그램", "linear-gradient(115deg, rgba(255,0,128,.9) 0%, rgba(255,214,0,.9) 18%, rgba(0,255,170,.9) 36%, rgba(0,170,255,.9) 54%, rgba(170,0,255,.9) 72%, rgba(255,0,128,.9) 100%)", "hard-light", ".62"),
-    ("금", "linear-gradient(150deg, #FFF3B0 0%, #E8B23A 28%, #8C5A12 52%, #FFE07A 74%, #C8901F 100%)", "soft-light", ".95"),
-    ("은", "linear-gradient(150deg, #FFFFFF 0%, #C9D4DC 28%, #6A7884 52%, #F2F6F9 74%, #9AA7B2 100%)", "soft-light", ".95"),
-    ("동", "linear-gradient(150deg, #FFD9B0 0%, #C87A3C 30%, #70401A 55%, #EFB37A 78%, #A05F28 100%)", "soft-light", ".95"),
-]
+# index.html 에서  :root[data-mat1="gold"] { --mk1: url("...") }  꼴을 뽑는다
+css = io.open(os.path.join(ROOT, "index.html"), encoding="utf-8").read()
+MARKS = dict(re.findall(r':root\[data-mat1="(\w+)"\] \{ --mk1: (url\(".*?"\)); \}', css))
+if len(MARKS) != 4:
+    raise SystemExit("index.html 에서 문양을 못 찾았어요 (%d개). CSS 모양이 바뀌었는지 확인하세요." % len(MARKS))
 
-NAMEMAT = [
-    ("홀로그램", "linear-gradient(100deg, #FF4FA3, #FFD400, #35FFC0, #35B8FF, #B45CFF, #FF4FA3)"),
-    ("금", "linear-gradient(100deg, #FFF0A8, #E0A92C, #FFE68A, #B07D18)"),
-    ("은", "linear-gradient(100deg, #FFFFFF, #AEBBC6, #F0F5F8, #8894A0)"),
-    ("동", "linear-gradient(100deg, #FFD3A4, #B9702F, #F0B583, #8A5220)"),
-]
+NAMES = {"holo": "홀로그램", "gold": "금", "silver": "은", "bronze": "동"}
+ORDER = ["holo", "gold", "silver", "bronze"]
+TEXT_GRAD = {
+    "holo": "linear-gradient(100deg,#FF4FA3,#FFD400,#35FFC0,#35B8FF,#B45CFF,#FF4FA3)",
+    "gold": "linear-gradient(100deg,#FFF0A8,#E0A92C,#FFE68A,#B07D18)",
+    "silver": "linear-gradient(100deg,#FFFFFF,#AEBBC6,#F0F5F8,#8894A0)",
+    "bronze": "linear-gradient(100deg,#FFD3A4,#B9702F,#F0B583,#8A5220)",
+}
 
 
 def grid(title, colors):
     rows = []
-    for label, img, blend, op in MATS:
+    for key in ["none"] + ORDER:
+        mark = "none" if key == "none" else MARKS[key]
         cells = "".join(
-            '<i style="background:%s"><s style="background-image:%s;mix-blend-mode:%s;opacity:%s"></s><b>%d</b></i>'
-            % (c, img, blend, op, k + 1) for k, c in enumerate(colors))
-        rows.append('<tr><th>%s</th><td><div class="row">%s</div></td></tr>' % (label, cells))
-    return '<h2>%s</h2><table>%s</table>' % (title, "".join(rows))
+            '<i style="background:{bg}"><s style="background-image:{mk}"></s><b>{n}</b></i>'.format(
+                bg=c, mk=mark, n=k + 1)
+            for k, c in enumerate(colors))
+        label = "없음" if key == "none" else NAMES[key]
+        rows.append('<tr><th>{l}</th><td><div class="row">{c}</div></td></tr>'.format(l=label, c=cells))
+    return "<h2>{t}</h2><table>{r}</table>".format(t=title, r="".join(rows))
 
 
 names = "".join(
-    '<li><span class="mt" style="background-image:%s">홍길동</span> <small>%s</small></li>' % (img, label)
-    for label, img in NAMEMAT)
+    '<li><span class="mt" style="background-image:{g}"><s style="background-image:{mk}"></s>홍길동</span>'
+    ' <small>{n}</small></li>'.format(g=TEXT_GRAD[k], mk=MARKS[k], n=NAMES[k])
+    for k in ORDER)
 
 html = """<!doctype html><meta charset="utf-8"><title>재질 미리보기</title>
 <style>
@@ -55,24 +61,30 @@ html = """<!doctype html><meta charset="utf-8"><title>재질 미리보기</title
   p.note { color:#8FA3B4; font-size:13px; margin:0 0 6px; }
   table { border-collapse:collapse; }
   th { text-align:left; font-size:13px; color:#8FA3B4; padding:6px 14px 6px 0; white-space:nowrap; }
-  td { padding:5px 0; }
   .row { display:flex; gap:6px; }
-  .row i { width:44px; height:44px; border-radius:8px; position:relative; display:grid; place-items:center;
+  .row i { width:46px; height:46px; border-radius:8px; position:relative; display:grid; place-items:center;
            box-shadow: inset 0 -3px 0 rgba(0,0,0,.18), inset 0 2px 0 rgba(255,255,255,.25); }
-  .row i s { position:absolute; inset:0; border-radius:inherit; text-decoration:none; }
-  .row i b { position:relative; font-size:12px; color:rgba(0,0,0,.55); }
+  .row i s { position:absolute; inset:0; background-repeat:no-repeat; background-position:center;
+             background-size:58%; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+  .row i b { position:relative; font-size:11px; color:rgba(0,0,0,.5); align-self:end; margin-bottom:2px; }
   ul { list-style:none; padding:0; margin:8px 0 0; display:flex; gap:22px; flex-wrap:wrap; align-items:center; }
   li small { color:#8FA3B4; font-size:12px; }
   .mt { background-clip:text; -webkit-background-clip:text; color:transparent; font-weight:800; font-size:20px; }
+  .mt s { display:inline-block; width:1em; height:1em; margin-right:3px; vertical-align:-0.12em;
+          background-repeat:no-repeat; background-position:center; background-size:contain; }
 </style>
 <h1>재질 미리보기</h1>
-<p class="note">재질은 색을 덮지 않고 광택만 얹는다. 1~6 숫자가 블록 크기 — 재질을 입혀도 여섯이 서로 달라 보여야 한다.</p>
-<p class="note">실제로는 한 번에 세 개까지만, 본인이 고른 크기에만 입는다. 여기서는 비교하려고 전부 입혔다.</p>
-%s
-%s
+<p class="note">재질은 블록 가운데에 문양을 얹는다. 색은 건드리지 않아서 크기 구분이 그대로 남는다.</p>
+<p class="note">모양을 재질마다 다르게 했다 — 반짝임(홀로그램) · 별(금) · 마름모(은) · 동그라미(동). 색이 안 보여도 구분된다.</p>
+<p class="note">실제로는 한 번에 세 개까지, 본인이 고른 크기에만 입는다. 여기서는 비교하려고 전부 입혔다.</p>
+__BASE__
+__AUTUMN__
 <h2>순위표 닉네임</h2>
-<ul>%s</ul>
-""" % (grid("기본 팔레트", BASE), grid("10월 단풍", AUTUMN), names)
+<ul>__NAMES__</ul>
+"""
+html = (html.replace("__BASE__", grid("기본 팔레트", BASE))
+            .replace("__AUTUMN__", grid("10월 단풍", AUTUMN))
+            .replace("__NAMES__", names))
 
 out = os.path.join(HERE, "material-preview.html")
 io.open(out, "w", encoding="utf-8", newline="\n").write(html)
