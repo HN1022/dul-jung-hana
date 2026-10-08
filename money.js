@@ -36,6 +36,11 @@
   const state = { removeAds: false, slotSub: false };
   let adsStarted = false, adsReady = false, bannerShown = false;
 
+  // 배너가 가릴 만큼 화면 아래에 자리를 비워 둔다(--ad-h → --bottom-gap → 각 화면의 아래 여백).
+  // 적응형 배너는 보통 50~60dp 다. 실제 높이는 bannerAdSizeChanged 가 알려 주는데, 그 이벤트가
+  // 늦거나 안 올 수도 있다 — 그러면 여백이 0이라 내용이 광고 밑으로 들어간다. 실제로 그랬다.
+  // 그래서 배너를 띄우자마자 넉넉히 잡아 두고, 진짜 높이가 오면 그때 맞춘다.
+  const AD_H_GUESS = 60;
   function setAdHeight(px) {
     document.documentElement.style.setProperty("--ad-h", Math.max(0, Math.round(px || 0)) + "px");
   }
@@ -61,6 +66,7 @@
     if (!adsStarted) { startAds(); return; }
     if (!adsReady || bannerShown) return;
     bannerShown = true;
+    setAdHeight(AD_H_GUESS);   // 먼저 자리부터 비운다. 광고가 안 뜨면 아래에서 0으로 되돌린다.
     AdMob.showBanner({
       adId: CONFIG.bannerId, adSize: "ADAPTIVE_BANNER", position: "BOTTOM_CENTER",
       margin: 0, isTesting: CONFIG.adsTesting,

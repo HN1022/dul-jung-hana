@@ -10,8 +10,9 @@
  *   소장 목록은 서버(titles/{uid}.owned)에 "m10-2026" 처럼 연도까지 들어간다. 같은 단풍이어도
  *   해마다 다른 수집품이라 1년 만에 수집이 끝나 버리지 않는다.
  *   base — 기본. cvd — 색약인 사람을 위한 것이라 달 제한 없이 항상 쓸 수 있다.
- *   월 테마는 계절 느낌을 우선해서 뽑았다. 색약까지 챙기면 12달이 다 비슷해져서 그렇게 했고,
- *   대신 안 맞는 사람은 "색약" 테마를 쓰면 된다.
+ *   월 테마는 **그 달 색 하나**로 간다(할로윈이면 전부 호박색). 1칸→6칸은 밝기만 다르다.
+ *   그래서 크기를 색으로 가리기는 어렵다 — 대신 블록마다 그 달 문양이 깔리고, 트레이에
+ *   "4칸 블록"이라고 쓰여 있다. 여섯 색을 뚜렷이 벌린 것은 기본·색약·테스터 셋뿐이다.
  *
  * 화면은 window.Themes 만 쓴다:
  *   Themes.list() / Themes.get(id) / Themes.usable(id) / Themes.monthNow()
@@ -22,19 +23,18 @@
   const THEMES = [
     { id: "base", icon: "🧱", month: 0, c: ["#009E9F", "#A8C5C4", "#3AC781", "#D96A6B", "#E69EBE", "#43C0FD"] },
     { id: "cvd", icon: "👁", month: 0, c: ["#769493", "#00C2FF", "#58AC72", "#D07937", "#DBBCBC", "#7A8DCD"] },
-    { id: "tester", icon: "🏅", month: -1, c: ["#FF8F68", "#C67E1F", "#FFADBA", "#A9837F", "#D4C1B4", "#EC568A"] },
-    { id: "m1", icon: "❄️", month: 1, c: ["#559A9B", "#00D7FE", "#009ADE", "#00DDC9", "#A7B6C6", "#FE897F"] },
-    { id: "m2", icon: "🌺", month: 2, c: ["#E558A0", "#EDB8C8", "#9A8792", "#74B06F", "#FD7777", "#EA98FF"] },
-    { id: "m3", icon: "🌼", month: 3, c: ["#ED5E60", "#9F8881", "#DC7736", "#FFB19D", "#C6B466", "#FF94BC"] },
-    { id: "m4", icon: "🌸", month: 4, c: ["#CC7AE0", "#E9588B", "#978897", "#F3B2CE", "#B4C0FF", "#BBBF80"] },
-    { id: "m5", icon: "🌹", month: 5, c: ["#FFA8C3", "#D2B8FE", "#A38B8F", "#C26EC8", "#799A51", "#E5626E"] },
-    { id: "m6", icon: "💠", month: 6, c: ["#37CFFF", "#BDC2D5", "#0094E9", "#73969C", "#9083CE", "#3ED4C5"] },
-    { id: "m7", icon: "🌊", month: 7, c: ["#049C99", "#0096CB", "#A4BEB9", "#00D8FF", "#00DDAF", "#F68F6C"] },
-    { id: "m8", icon: "🎆", month: 8, c: ["#FF96A2", "#F6834E", "#8EB540", "#30C2C6", "#90B3FF", "#D181C8"] },
-    { id: "m9", icon: "🍁", month: 9, c: ["#EC5C61", "#FF9ABA", "#FFA88B", "#9E8980", "#B3B96A", "#00BACA"] },
-    { id: "m10", icon: "🎃", month: 10, c: ["#A68C89", "#AABFFF", "#B4A028", "#A27BCF", "#F796C0", "#00B5BA"] },
-    { id: "m11", icon: "🍂", month: 11, c: ["#F9B4AC", "#9F8787", "#EA7249", "#EE5C83", "#BFB07B", "#00D5F2"] },
-    { id: "m12", icon: "🎄", month: 12, c: ["#E95790", "#C1A8AD", "#9AA797", "#94CE6C", "#CD7A5D", "#FF9BEE"] },
+    { id: "m1", icon: "❄️", month: 1, c: ["#0280BF", "#0289CC", "#0291D9", "#029AE6", "#02A2F2", "#03ABFF"] },
+    { id: "m2", icon: "🌺", month: 2, c: ["#C25765", "#CE5D6C", "#DA6272", "#E76879", "#F36D7F", "#FF7385"] },
+    { id: "m3", icon: "🌼", month: 3, c: ["#947701", "#A68502", "#B99402", "#CBA302", "#DDB202", "#F0C002"] },
+    { id: "m4", icon: "🌸", month: 4, c: ["#C2537C", "#CE5984", "#DA5E8B", "#E76393", "#F3689B", "#FF6EA3"] },
+    { id: "m5", icon: "🌹", month: 5, c: ["#C25769", "#CE5D70", "#DA6276", "#E7687D", "#F36D83", "#FF738A"] },
+    { id: "m6", icon: "💠", month: 6, c: ["#8F65BF", "#996CCC", "#A273D9", "#AC7AE6", "#B680F2", "#BF87FF"] },
+    { id: "m7", icon: "🌊", month: 7, c: ["#0283A3", "#0292B6", "#02A0C8", "#02AFDA", "#02BEED", "#03CDFF"] },
+    { id: "m8", icon: "🎆", month: 8, c: ["#A86B02", "#BA7602", "#CB8102", "#DC8C02", "#EE9702", "#FFA203"] },
+    { id: "m9", icon: "🍁", month: 9, c: ["#C25C30", "#CE6234", "#DA6837", "#E76D3A", "#F3733D", "#FF7940"] },
+    { id: "m10", icon: "🎃", month: 10, c: ["#BF5E0A", "#CC650A", "#D96B0B", "#E6710B", "#F2780C", "#FF7E0D"] },
+    { id: "m11", icon: "🍂", month: 11, c: ["#C25C0E", "#CE610E", "#DA670F", "#E76D10", "#F37311", "#FF7912"] },
+    { id: "m12", icon: "🎄", month: 12, c: ["#018C42", "#029E4A", "#02AF53", "#02C05B", "#02D263", "#02E36B"] },
   ];
   const byId = (id) => THEMES.find((t) => t.id === id) || THEMES[0];
   // 한국 시간 기준. 시즌·이어하기 횟수와 같은 기준을 쓴다.

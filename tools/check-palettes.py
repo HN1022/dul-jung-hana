@@ -144,12 +144,14 @@ def simulate(rgb, kind):
 
 
 # ---- 검사 ----
-def check(name, colors):
+def check(name, colors, soft_board=False):
     """colors = 1~6칸 순서의 hex 6개. 문제를 문자열 목록으로 돌려준다."""
     bad = []
     rgb = [hex_rgb(c) for c in colors]
 
     for sname, shex, need in SURFACES:
+        if soft_board and "보드" in sname:
+            need = 2.3
         surf = hex_rgb(shex)
         for i, c in enumerate(rgb):
             ct = contrast(c, surf)
@@ -175,7 +177,15 @@ def report(palettes):
     ok = True
     for name, colors, *rest in palettes:
         need_cvd = rest[0] if rest else True
-        bad = [x for x in check(name, colors) if need_cvd or not x.startswith(("[적색맹", "[녹색맹"))]
+        # 월 테마는 "그 달 색 하나 + 밝기 단계"라 여섯 색을 벌리지 않는다.
+        # 그래서 색거리 검사는 건너뛰고, 보이는지(면 대비)만 본다. 보드 기준도 2.3 으로 낮춘다
+        # — 블록이 크고 안쪽 테두리와 문양이 있어서 그 정도면 경계가 보인다.
+        month_theme = not need_cvd and name not in ("테스터",)
+        bad = check(name, colors, soft_board=month_theme)
+        if not need_cvd:
+            bad = [x for x in bad if not x.startswith(("[적색맹", "[녹색맹"))]
+        if month_theme:
+            bad = [x for x in bad if not x.startswith("[정상]")]
         if bad:
             ok = False
             print("✗ %s" % name)
