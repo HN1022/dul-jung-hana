@@ -2,7 +2,9 @@
  *
  * 안드로이드 앱(Capacitor)에서만 동작한다. 웹(아이폰 포함)에는 광고가 없다.
  *
- * 앱: 하단 배너 + 게임오버 후 전면광고(CONFIG.interstitialEvery 판마다 한 번) + 이어하기 보상형 광고.
+ * 앱: 하단 배너 + 게임오버 후 전면광고 + 이어하기 보상형 광고.
+ * 전면광고는 CONFIG.interstitialEvery 판 이상 **그리고** 직전 전면광고로부터 CONFIG.interstitialGapMs 이상
+ * 지났을 때만 뜬다. 둘 다 만족해야 한다.
  *
  * 인앱 결제(광고 제거·보관 칸 구독)는 2026-09-18 에 뺐다. 한국에서 유료 상품을 팔려면 사업자등록·통신판매업
  * 신고가 필요한데 개인으로 운영하기로 해서. 보관 칸은 누구나 2칸 무료. 다시 넣으려면 git 기록(이 파일의 이전 버전)과
@@ -21,7 +23,11 @@
     bannerId: "ca-app-pub-4373923440824013/2784517335",
     interstitialId: "ca-app-pub-4373923440824013/9158353992",
     rewardedId: "ca-app-pub-4373923440824013/2930490012",   // 보상형 "이어하기" (2026-09-18 생성)
-    interstitialEvery: 2,        // 게임오버 몇 번에 한 번 전면광고를 보여줄지
+    // 전면광고는 둘 다 만족해야 뜬다. 2026-10-08 에 "광고가 너무 길다"는 말을 듣고 크게 늦췄다
+    // (전 2판에 한 번, 간격 제한 없음 → 5판에 한 번 + 최소 4분). 광고 길이 자체는 광고주가 정하는 거라
+    // 우리가 못 줄인다. 대신 마주치는 횟수를 줄였다. 수익은 줄지만 한 판이 짧은 게임이라 이게 맞다.
+    interstitialEvery: 5,        // 게임오버 몇 번에 한 번
+    interstitialGapMs: 4 * 60 * 1000,   // 직전 전면광고로부터 최소 이만큼 지나야
   };
 
   const cap = window.Capacitor;
@@ -31,6 +37,8 @@
   // 예전 결제 상태 자리. 이제 아무것도 사지 않으므로 늘 false (index.html 이 읽는 모양만 유지).
   const state = { removeAds: false, slotSub: false };
   let adsStarted = false, adsReady = false, bannerShown = false, interstitialReady = false, gamesSinceAd = 0;
+  // 앱을 켠 순간부터 잰다 — 들어오자마자 전면광고를 맞는 일이 없게.
+  let lastInterstitialAt = Date.now();
 
   function setAdHeight(px) {
     document.documentElement.style.setProperty("--ad-h", Math.max(0, Math.round(px || 0)) + "px");
@@ -95,7 +103,9 @@
     maybeInterstitial() {
       if (!AdMob || !interstitialReady) return;
       if (gamesSinceAd < CONFIG.interstitialEvery) return;
+      if (Date.now() - lastInterstitialAt < CONFIG.interstitialGapMs) return;   // 판수는 찼어도 너무 금방이면 넘긴다
       gamesSinceAd = 0;
+      lastInterstitialAt = Date.now();
       interstitialReady = false;
       AdMob.showInterstitial().catch(() => prepareInterstitial());
     },
