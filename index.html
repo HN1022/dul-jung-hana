@@ -328,72 +328,67 @@
   .tut .bubble .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .tut .bubble .dots { color: var(--muted); font-size: 12px; }
 
-  /* ---- 재질 (등수 보상) ----
-     지난달 순위로 정해지는 보상. 블록 **가운데에 문양**을 얹는다.
-     색은 하나도 건드리지 않는다 — 블록 크기를 색으로 알아보는 게 규칙이라, 색을 바꾸면 게임이 안 된다.
-     문양은 모양부터 다르게 했다(반짝임·별·마름모·동그라미). 색이 안 보여도 어느 재질인지 알 수 있다.
-     한 번에 세 개까지만 입힌다. themes.js 가 :root 에 data-mat{크기}="재질" 을 붙였다 뗀다 — DOM 은 안 건드린다. */
+  /* 문양이 블록 하나하나에 깔리려면 .blk 가 기준이 돼야 한다.
+     이게 없으면 ::before 가 트레이 칸 전체를 덮어 커다란 그림 하나가 된다. */
   .blk { position: relative; }
-  :root[data-mat1="holo"] { --mk1: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FF4FA3%22%2F%3E%3Cstop%20offset%3D%220.25%22%20stop-color%3D%22%23FFD400%22%2F%3E%3Cstop%20offset%3D%220.5%22%20stop-color%3D%22%2335FFC0%22%2F%3E%3Cstop%20offset%3D%220.75%22%20stop-color%3D%22%2335B8FF%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23B45CFF%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%202.5c.7%204.6%202.2%206.1%206.8%206.8%20.7.1%20.7%201.3%200%201.4-4.6.7-6.1%202.2-6.8%206.8-.1.7-1.3.7-1.4%200-.7-4.6-2.2-6.1-6.8-6.8-.7-.1-.7-1.3%200-1.4%204.6-.7%206.1-2.2%206.8-6.8.1-.7%201.3-.7%201.4%200z%22%20transform%3D%22translate%280%2C2%29%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat1="gold"] { --mk1: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFF6C2%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23F0C04A%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23A9701A%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FFE699%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203l2.6%205.6%206.1.8-4.5%204.2%201.2%206-5.4-3-5.4%203%201.2-6L3.3%209.4l6.1-.8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat1="silver"] { --mk1: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFFFFF%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23D5DEE6%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%237D8A96%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F2F6F9%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203.2l8.4%208.8-8.4%208.8-8.4-8.8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat1="bronze"] { --mk1: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFE0BC%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23CE8445%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%237A471C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F0B07A%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%227.6%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat2="holo"] { --mk2: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FF4FA3%22%2F%3E%3Cstop%20offset%3D%220.25%22%20stop-color%3D%22%23FFD400%22%2F%3E%3Cstop%20offset%3D%220.5%22%20stop-color%3D%22%2335FFC0%22%2F%3E%3Cstop%20offset%3D%220.75%22%20stop-color%3D%22%2335B8FF%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23B45CFF%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%202.5c.7%204.6%202.2%206.1%206.8%206.8%20.7.1%20.7%201.3%200%201.4-4.6.7-6.1%202.2-6.8%206.8-.1.7-1.3.7-1.4%200-.7-4.6-2.2-6.1-6.8-6.8-.7-.1-.7-1.3%200-1.4%204.6-.7%206.1-2.2%206.8-6.8.1-.7%201.3-.7%201.4%200z%22%20transform%3D%22translate%280%2C2%29%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat2="gold"] { --mk2: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFF6C2%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23F0C04A%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23A9701A%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FFE699%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203l2.6%205.6%206.1.8-4.5%204.2%201.2%206-5.4-3-5.4%203%201.2-6L3.3%209.4l6.1-.8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat2="silver"] { --mk2: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFFFFF%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23D5DEE6%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%237D8A96%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F2F6F9%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203.2l8.4%208.8-8.4%208.8-8.4-8.8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat2="bronze"] { --mk2: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFE0BC%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23CE8445%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%237A471C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F0B07A%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%227.6%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat3="holo"] { --mk3: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FF4FA3%22%2F%3E%3Cstop%20offset%3D%220.25%22%20stop-color%3D%22%23FFD400%22%2F%3E%3Cstop%20offset%3D%220.5%22%20stop-color%3D%22%2335FFC0%22%2F%3E%3Cstop%20offset%3D%220.75%22%20stop-color%3D%22%2335B8FF%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23B45CFF%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%202.5c.7%204.6%202.2%206.1%206.8%206.8%20.7.1%20.7%201.3%200%201.4-4.6.7-6.1%202.2-6.8%206.8-.1.7-1.3.7-1.4%200-.7-4.6-2.2-6.1-6.8-6.8-.7-.1-.7-1.3%200-1.4%204.6-.7%206.1-2.2%206.8-6.8.1-.7%201.3-.7%201.4%200z%22%20transform%3D%22translate%280%2C2%29%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat3="gold"] { --mk3: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFF6C2%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23F0C04A%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23A9701A%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FFE699%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203l2.6%205.6%206.1.8-4.5%204.2%201.2%206-5.4-3-5.4%203%201.2-6L3.3%209.4l6.1-.8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat3="silver"] { --mk3: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFFFFF%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23D5DEE6%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%237D8A96%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F2F6F9%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203.2l8.4%208.8-8.4%208.8-8.4-8.8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat3="bronze"] { --mk3: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFE0BC%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23CE8445%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%237A471C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F0B07A%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%227.6%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat4="holo"] { --mk4: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FF4FA3%22%2F%3E%3Cstop%20offset%3D%220.25%22%20stop-color%3D%22%23FFD400%22%2F%3E%3Cstop%20offset%3D%220.5%22%20stop-color%3D%22%2335FFC0%22%2F%3E%3Cstop%20offset%3D%220.75%22%20stop-color%3D%22%2335B8FF%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23B45CFF%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%202.5c.7%204.6%202.2%206.1%206.8%206.8%20.7.1%20.7%201.3%200%201.4-4.6.7-6.1%202.2-6.8%206.8-.1.7-1.3.7-1.4%200-.7-4.6-2.2-6.1-6.8-6.8-.7-.1-.7-1.3%200-1.4%204.6-.7%206.1-2.2%206.8-6.8.1-.7%201.3-.7%201.4%200z%22%20transform%3D%22translate%280%2C2%29%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat4="gold"] { --mk4: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFF6C2%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23F0C04A%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23A9701A%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FFE699%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203l2.6%205.6%206.1.8-4.5%204.2%201.2%206-5.4-3-5.4%203%201.2-6L3.3%209.4l6.1-.8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat4="silver"] { --mk4: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFFFFF%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23D5DEE6%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%237D8A96%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F2F6F9%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203.2l8.4%208.8-8.4%208.8-8.4-8.8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat4="bronze"] { --mk4: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFE0BC%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23CE8445%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%237A471C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F0B07A%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%227.6%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat5="holo"] { --mk5: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FF4FA3%22%2F%3E%3Cstop%20offset%3D%220.25%22%20stop-color%3D%22%23FFD400%22%2F%3E%3Cstop%20offset%3D%220.5%22%20stop-color%3D%22%2335FFC0%22%2F%3E%3Cstop%20offset%3D%220.75%22%20stop-color%3D%22%2335B8FF%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23B45CFF%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%202.5c.7%204.6%202.2%206.1%206.8%206.8%20.7.1%20.7%201.3%200%201.4-4.6.7-6.1%202.2-6.8%206.8-.1.7-1.3.7-1.4%200-.7-4.6-2.2-6.1-6.8-6.8-.7-.1-.7-1.3%200-1.4%204.6-.7%206.1-2.2%206.8-6.8.1-.7%201.3-.7%201.4%200z%22%20transform%3D%22translate%280%2C2%29%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat5="gold"] { --mk5: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFF6C2%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23F0C04A%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23A9701A%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FFE699%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203l2.6%205.6%206.1.8-4.5%204.2%201.2%206-5.4-3-5.4%203%201.2-6L3.3%209.4l6.1-.8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat5="silver"] { --mk5: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFFFFF%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23D5DEE6%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%237D8A96%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F2F6F9%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203.2l8.4%208.8-8.4%208.8-8.4-8.8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat5="bronze"] { --mk5: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFE0BC%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23CE8445%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%237A471C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F0B07A%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%227.6%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat6="holo"] { --mk6: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FF4FA3%22%2F%3E%3Cstop%20offset%3D%220.25%22%20stop-color%3D%22%23FFD400%22%2F%3E%3Cstop%20offset%3D%220.5%22%20stop-color%3D%22%2335FFC0%22%2F%3E%3Cstop%20offset%3D%220.75%22%20stop-color%3D%22%2335B8FF%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23B45CFF%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%202.5c.7%204.6%202.2%206.1%206.8%206.8%20.7.1%20.7%201.3%200%201.4-4.6.7-6.1%202.2-6.8%206.8-.1.7-1.3.7-1.4%200-.7-4.6-2.2-6.1-6.8-6.8-.7-.1-.7-1.3%200-1.4%204.6-.7%206.1-2.2%206.8-6.8.1-.7%201.3-.7%201.4%200z%22%20transform%3D%22translate%280%2C2%29%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat6="gold"] { --mk6: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFF6C2%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23F0C04A%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23A9701A%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FFE699%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203l2.6%205.6%206.1.8-4.5%204.2%201.2%206-5.4-3-5.4%203%201.2-6L3.3%209.4l6.1-.8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat6="silver"] { --mk6: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFFFFF%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23D5DEE6%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%237D8A96%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F2F6F9%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203.2l8.4%208.8-8.4%208.8-8.4-8.8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  :root[data-mat6="bronze"] { --mk6: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFE0BC%22%2F%3E%3Cstop%20offset%3D%220.35%22%20stop-color%3D%22%23CE8445%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%237A471C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F0B07A%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22url%28%23g%29%22%20stroke%3D%22rgba%280%2C0%2C0%2C.45%29%22%20stroke-width%3D%221%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%227.6%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
 
-  .cell[data-c="1"]::before, .blk.c1::before {
+  /* ---- 재질 (등수 보상) ----
+     지난달 순위로 정해지는 보상. 블록 **색 자체**가 금·은·동·홀로그램이 된다(순위표 줄 박스와 같은 결).
+     한 번에 세 개까지만. 나머지 세 크기는 테마 색 그대로라 크기 구분이 남는다.
+     themes.js 가 :root 에 data-mat{크기}="재질" 을 붙였다 뗀다 — DOM 은 안 건드린다. */
+  :root[data-mat1="holo"] { --matbg1: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
+  :root[data-mat1="gold"] { --matbg1: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
+  :root[data-mat1="silver"] { --matbg1: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
+  :root[data-mat1="bronze"] { --matbg1: linear-gradient(150deg, #FFD9B4, #D59055 35%, #8C5524 60%, #F5C79B); }
+  :root[data-mat2="holo"] { --matbg2: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
+  :root[data-mat2="gold"] { --matbg2: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
+  :root[data-mat2="silver"] { --matbg2: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
+  :root[data-mat2="bronze"] { --matbg2: linear-gradient(150deg, #FFD9B4, #D59055 35%, #8C5524 60%, #F5C79B); }
+  :root[data-mat3="holo"] { --matbg3: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
+  :root[data-mat3="gold"] { --matbg3: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
+  :root[data-mat3="silver"] { --matbg3: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
+  :root[data-mat3="bronze"] { --matbg3: linear-gradient(150deg, #FFD9B4, #D59055 35%, #8C5524 60%, #F5C79B); }
+  :root[data-mat4="holo"] { --matbg4: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
+  :root[data-mat4="gold"] { --matbg4: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
+  :root[data-mat4="silver"] { --matbg4: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
+  :root[data-mat4="bronze"] { --matbg4: linear-gradient(150deg, #FFD9B4, #D59055 35%, #8C5524 60%, #F5C79B); }
+  :root[data-mat5="holo"] { --matbg5: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
+  :root[data-mat5="gold"] { --matbg5: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
+  :root[data-mat5="silver"] { --matbg5: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
+  :root[data-mat5="bronze"] { --matbg5: linear-gradient(150deg, #FFD9B4, #D59055 35%, #8C5524 60%, #F5C79B); }
+  :root[data-mat6="holo"] { --matbg6: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
+  :root[data-mat6="gold"] { --matbg6: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
+  :root[data-mat6="silver"] { --matbg6: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
+  :root[data-mat6="bronze"] { --matbg6: linear-gradient(150deg, #FFD9B4, #D59055 35%, #8C5524 60%, #F5C79B); }
+
+  .cell[data-c="1"], .blk.c1 { background-image: var(--matbg1, none); }
+  .cell[data-c="2"], .blk.c2 { background-image: var(--matbg2, none); }
+  .cell[data-c="3"], .blk.c3 { background-image: var(--matbg3, none); }
+  .cell[data-c="4"], .blk.c4 { background-image: var(--matbg4, none); }
+  .cell[data-c="5"], .blk.c5 { background-image: var(--matbg5, none); }
+  .cell[data-c="6"], .blk.c6 { background-image: var(--matbg6, none); }
+
+  /* ---- 월 테마 문양 ----
+     그 달 테마를 쓰면 블록에 옅게 깔린다. 색은 안 건드리고 검은색 반투명으로만 얹어서
+     (흰색으로 했더니 금·은 같은 밝은 블록에서 안 보였다)
+     크기 구분을 방해하지 않는다. 금·은·동 블록에는 그 위에 그대로 올라간다.
+     이모지가 아니라 직접 그린 SVG 다 — 이모지는 폰마다 모양이 달라진다. */
+  :root[data-theme-mark="m1"] { --themark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Cpath%20d%3D%22M12%202v20M3.3%207l17.4%2010M20.7%207L3.3%2017%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.6%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%222.1%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  :root[data-theme-mark="m2"] { --themark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Cg%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%226.4%22%20r%3D%223.5%22%2F%3E%3Ccircle%20cx%3D%2217.3%22%20cy%3D%2210.2%22%20r%3D%223.5%22%2F%3E%3Ccircle%20cx%3D%2215.3%22%20cy%3D%2216.4%22%20r%3D%223.5%22%2F%3E%3Ccircle%20cx%3D%228.7%22%20cy%3D%2216.4%22%20r%3D%223.5%22%2F%3E%3Ccircle%20cx%3D%226.7%22%20cy%3D%2210.2%22%20r%3D%223.5%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  :root[data-theme-mark="m3"] { --themark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Cg%3E%3Cellipse%20cx%3D%2212%22%20cy%3D%226%22%20rx%3D%222.6%22%20ry%3D%224.4%22%2F%3E%3Cellipse%20cx%3D%2212%22%20cy%3D%2218%22%20rx%3D%222.6%22%20ry%3D%224.4%22%2F%3E%3Cellipse%20cx%3D%226%22%20cy%3D%2212%22%20rx%3D%224.4%22%20ry%3D%222.6%22%2F%3E%3Cellipse%20cx%3D%2218%22%20cy%3D%2212%22%20rx%3D%224.4%22%20ry%3D%222.6%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  :root[data-theme-mark="m4"] { --themark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Cg%3E%3Cellipse%20cx%3D%2212%22%20cy%3D%225.6%22%20rx%3D%222.4%22%20ry%3D%224%22%2F%3E%3Cellipse%20cx%3D%2218%22%20cy%3D%2210%22%20rx%3D%222.4%22%20ry%3D%224%22%20transform%3D%22rotate%2872%2018%2010%29%22%2F%3E%3Cellipse%20cx%3D%2215.7%22%20cy%3D%2217%22%20rx%3D%222.4%22%20ry%3D%224%22%20transform%3D%22rotate%28144%2015.7%2017%29%22%2F%3E%3Cellipse%20cx%3D%228.3%22%20cy%3D%2217%22%20rx%3D%222.4%22%20ry%3D%224%22%20transform%3D%22rotate%28216%208.3%2017%29%22%2F%3E%3Cellipse%20cx%3D%226%22%20cy%3D%2210%22%20rx%3D%222.4%22%20ry%3D%224%22%20transform%3D%22rotate%28288%206%2010%29%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  :root[data-theme-mark="m5"] { --themark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Cpath%20d%3D%22M12%203a9%209%200%201%200%209%209%207%207%200%200%201-7%207%205%205%200%200%201-5-5%203.6%203.6%200%200%201%203.6-3.6%202.6%202.6%200%200%201%202.6%202.6%201.8%201.8%200%200%201-1.8%201.8%22%20stroke%3D%22%23000%22%20stroke-width%3D%222%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  :root[data-theme-mark="m6"] { --themark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Cg%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%227%22%20r%3D%223%22%2F%3E%3Ccircle%20cx%3D%227%22%20cy%3D%2211%22%20r%3D%223%22%2F%3E%3Ccircle%20cx%3D%2217%22%20cy%3D%2211%22%20r%3D%223%22%2F%3E%3Ccircle%20cx%3D%229.5%22%20cy%3D%2216%22%20r%3D%223%22%2F%3E%3Ccircle%20cx%3D%2214.5%22%20cy%3D%2216%22%20r%3D%223%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  :root[data-theme-mark="m7"] { --themark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Cg%20stroke%3D%22%23000%22%20stroke-width%3D%222.1%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M2.5%209c2-2%203.5-2%205.5%200s3.5%202%205.5%200%203.5-2%205.5%200%22%2F%3E%3Cpath%20d%3D%22M2.5%2015c2-2%203.5-2%205.5%200s3.5%202%205.5%200%203.5-2%205.5%200%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  :root[data-theme-mark="m8"] { --themark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Cg%20stroke%3D%22%23000%22%20stroke-width%3D%221.9%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M12%202.5v5M12%2016.5v5M2.5%2012h5M16.5%2012h5M5.2%205.2l3.5%203.5M15.3%2015.3l3.5%203.5M18.8%205.2l-3.5%203.5M8.7%2015.3l-3.5%203.5%22%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%222.2%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  :root[data-theme-mark="m9"] { --themark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Cpath%20d%3D%22M12%202.5l2.3%204.6%202.5-1-1%203.2%204.4-.6-3.1%202.9%201.9%201.4-4.6%201.1.6%202.6-2.4-1.3V21h-1.2v-5.6l-2.4%201.3.6-2.6L5.4%2013l1.9-1.4-3.1-2.9%204.4.6-1-3.2%202.5%201z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  :root[data-theme-mark="m10"] { --themark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Cpath%20d%3D%22M12%205.5c.5-1.8%201.4-2.6%202.8-3v2.2c-1%20.2-1.5.5-1.8%201.1%203.9.2%206.4%203%206.4%206.9%200%204.1-2.8%207.3-6.2%207.3-.4%200-.8-.1-1.2-.2-.4.1-.8.2-1.2.2-3.4%200-6.2-3.2-6.2-7.3%200-3.9%202.6-6.8%206.6-6.9z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  :root[data-theme-mark="m11"] { --themark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Cpath%20d%3D%22M19.5%204.5c-8%200-13%203.8-13%209.2%200%201.6.5%203%201.3%204.1l-3%203%201.2%201.2%203-3c1.2.9%202.7%201.4%204.4%201.4%205.3%200%209.1-5%209.1-13%200-.8%200-1.6-.1-2.4-.9-.3-1.9-.5-2.9-.5z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  :root[data-theme-mark="m12"] { --themark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Cpath%20d%3D%22M12%202.5L6.4%2010h3L5%2016.3h5.2V21h3.6v-4.7H19L14.6%2010h3z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  .cell[data-c]:not([data-c=""])::before, .blk::before {
     content: ""; position: absolute; inset: 0; pointer-events: none;
-    background-image: var(--mk1, none); background-repeat: no-repeat;
-    background-position: center; background-size: 58%;
-    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .35));
-  }
-  .cell[data-c="2"]::before, .blk.c2::before {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background-image: var(--mk2, none); background-repeat: no-repeat;
-    background-position: center; background-size: 58%;
-    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .35));
-  }
-  .cell[data-c="3"]::before, .blk.c3::before {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background-image: var(--mk3, none); background-repeat: no-repeat;
-    background-position: center; background-size: 58%;
-    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .35));
-  }
-  .cell[data-c="4"]::before, .blk.c4::before {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background-image: var(--mk4, none); background-repeat: no-repeat;
-    background-position: center; background-size: 58%;
-    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .35));
-  }
-  .cell[data-c="5"]::before, .blk.c5::before {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background-image: var(--mk5, none); background-repeat: no-repeat;
-    background-position: center; background-size: 58%;
-    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .35));
-  }
-  .cell[data-c="6"]::before, .blk.c6::before {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background-image: var(--mk6, none); background-repeat: no-repeat;
-    background-position: center; background-size: 58%;
-    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .35));
+    background-image: var(--themark, none); background-repeat: no-repeat;
+    background-position: center; background-size: 52%; opacity: .22;
   }
 
   /* 도감은 "어떤 모양이 나오는가"를 보는 곳이라 문양을 빼 둔다. 작은 그림이 복잡해지기만 한다. */
@@ -430,6 +425,17 @@
   .themeitem .mark { font-size: 12px; color: var(--accent); font-weight: 700; flex: none; }
   .themeitem .yrs { font-size: 11px; color: var(--muted); font-weight: 400; }
   .rankh { margin: 18px 0 0; font-size: 16px; font-weight: 800; }
+  /* 테마 미리보기 — 고르면 바로 여기에 칠해진다. 쓰기를 눌러야 저장된다. */
+  .tprev { display: flex; align-items: center; gap: 12px; background: var(--board); border-radius: 14px; padding: 12px; }
+  .tprevgrid { display: grid; grid-template-columns: repeat(4, 26px); grid-auto-rows: 26px; gap: 4px; flex: none; }
+  .tprevgrid i { border-radius: 5px; background: var(--cell); position: relative;
+    box-shadow: inset 0 0 0 1px var(--cell-line); }
+  .tprevgrid i.on { box-shadow: inset 0 -3px 0 rgba(0,0,0,.18), inset 0 2px 0 rgba(255,255,255,.25); }
+  .tprevside { flex: 1; min-width: 0; }
+  .tprevside b { display: block; font-size: 15px; font-weight: 800; }
+  .tprevside small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .tprevside .btn { margin-top: 8px; padding: 9px 12px; font-size: 14px; }
+  .tprevside .btn[disabled] { opacity: .45; }
   .matrow { display: flex; align-items: center; gap: 8px; background: var(--panel); border-radius: 12px; padding: 10px 12px; }
   .matrow .mn { flex: 1; font-size: 14px; font-weight: 700; }
   .matrow .chip.on { background: var(--accent); color: #06261D; }
@@ -721,6 +727,14 @@
       <button type="button" class="chip" id="themeClose" data-i18n="close">닫기</button>
     </div>
     <p class="tag" data-i18n="theme_note">블록 색만 바뀌어요. 달마다 다른 테마가 열리고, 그달에만 쓸 수 있어요.</p>
+    <div class="tprev">
+      <div class="tprevgrid" id="themePrevGrid"></div>
+      <div class="tprevside">
+        <b id="themePrevName"></b>
+        <small id="themePrevSub"></small>
+        <button type="button" class="btn" id="themeUse"></button>
+      </div>
+    </div>
     <div class="themelist" id="themeList"></div>
     <h3 class="rankh" data-i18n="mat_title">재질</h3>
     <p class="tag" id="matNote"></p>
@@ -781,8 +795,8 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="themes.js?v=6"></script>
-<script src="i18n.js?v=27"></script>
+<script src="themes.js?v=10"></script>
+<script src="i18n.js?v=29"></script>
 <script src="money.js?v=19"></script>
 <script src="engine.js?v=15"></script>
 <script src="leaderboard.js?v=17"></script>
@@ -2051,11 +2065,47 @@
     }
   }
   // 테마 고르기. 색은 themes.js 가 쥐고 있고 여기서는 목록만 그린다.
+  // 고르면 바로 칠해 보고(미리보기), "쓰기"를 눌러야 저장된다. 닫으면 원래대로 돌아간다.
+  let themePrev = null;
+  // 설명은 실제 달과 소장 여부로 정한다. 개발자 해금(all)으로 열려 있다고 "이번 달에 열렸어요"라고
+  // 하면 거짓말이 된다 — 해금 때문에 쓸 수 있는 것은 따로 적는다.
+  function themeSub(th, yrs) {
+    if (th.month === -1) {
+      if (Themes.reallyHas(th.id)) return t("theme_tester_got");
+      return t("theme_tester_no") + (Themes.isAll() ? " · " + t("theme_dev") : "");
+    }
+    if (th.month === 0) return t("theme_always");
+    if (yrs.length) return t("theme_owned");
+    if (th.month === Themes.monthNow()) return t("theme_open_now");
+    return t("theme_locked", { m: th.month }) + (Themes.isAll() ? " · " + t("theme_dev") : "");
+  }
+  function renderThemePrev() {
+    const id = themePrev || Themes.current();
+    const th = Themes.get(id);
+    const grid = $("themePrevGrid");
+    if (!grid.children.length) {
+      // 8칸짜리 작은 판 — 블록이 놓인 모습이 보이게 몇 칸만 채운다
+      for (let i = 0; i < 12; i++) grid.appendChild(document.createElement("i"));
+    }
+    const fill = { 0: 1, 1: 2, 2: 0, 4: 3, 5: 4, 6: 5, 9: 6, 10: 0 };
+    [...grid.children].forEach((el, i) => {
+      const c = fill[i];
+      el.className = c ? "on blk c" + c : "";
+      el.style.background = c ? `var(--c${c})` : "";
+    });
+    $("themePrevName").textContent = t("theme_" + th.id);
+    const yrs = Themes.ownedYears(th.id);
+    $("themePrevSub").textContent = themeSub(th, yrs);
+    const btn = $("themeUse");
+    const same = id === Themes.current();
+    btn.textContent = same ? t("theme_using") : t("theme_use");
+    btn.disabled = same;
+  }
   function renderThemes() {
     const box = $("themeList");
     box.textContent = "";
     Themes.list().forEach((th) => {
-      const on = Themes.current() === th.id;
+      const on = (themePrev || Themes.current()) === th.id;
       const can = Themes.usable(th.id);
       const b = document.createElement("button");
       b.type = "button";
@@ -2068,20 +2118,21 @@
       const yrs = Themes.ownedYears(th.id);
       // 소장한 해는 '26 처럼 붙여 준다. 같은 단풍이어도 해마다 다른 수집품이다.
       const tail = yrs.length ? ` <span class="yrs">${yrs.map((y) => "'" + String(y).slice(2)).join(" ")}</span>` : "";
-      const sub = th.month === -1 ? t(can ? "theme_tester_got" : "theme_tester_no")
-        : th.month === 0 ? t("theme_always")
-        : yrs.length ? t("theme_owned")
-        : can ? t("theme_open_now")
-        : t("theme_locked", { m: th.month });
+      const sub = themeSub(th, yrs);
       nm.innerHTML = esc(t("theme_" + th.id)) + tail + "<small>" + esc(sub) + "</small>";
       b.appendChild(nm);
-      if (on) {
+      if (Themes.current() === th.id) {
         const m = document.createElement("span");
         m.className = "mark";
         m.textContent = t("theme_using");
         b.appendChild(m);
       }
-      if (can) b.addEventListener("click", () => { Themes.apply(th.id); renderThemes(); renderBoard(); renderTray(false); });
+      if (can) b.addEventListener("click", () => {
+        themePrev = th.id;
+        Themes.preview(th.id);
+        renderThemes();
+        renderThemePrev();
+      });
       box.appendChild(b);
     });
   }
@@ -2154,8 +2205,22 @@
     }
   }
 
-  $("startTheme").addEventListener("click", () => { renderThemes(); renderMats(); $("themeModal").hidden = false; });
-  $("themeClose").addEventListener("click", () => { $("themeModal").hidden = true; });
+  $("themeUse").addEventListener("click", () => {
+    if (!themePrev) return;
+    Themes.apply(themePrev);
+    themePrev = null;
+    renderThemes(); renderThemePrev(); renderBoard(); renderTray(false);
+  });
+  $("startTheme").addEventListener("click", () => {
+    themePrev = null;
+    renderThemes(); renderThemePrev(); renderMats();
+    $("themeModal").hidden = false;
+  });
+  $("themeClose").addEventListener("click", () => {
+    if (themePrev) { Themes.revert(); themePrev = null; }   // 쓰기를 안 눌렀으면 되돌린다
+    $("themeModal").hidden = true;
+    renderBoard(); renderTray(false);
+  });
 
   $("startDex").addEventListener("click", () => { buildDex(); $("dexModal").hidden = false; });
   $("dexClose").addEventListener("click", () => { $("dexModal").hidden = true; });

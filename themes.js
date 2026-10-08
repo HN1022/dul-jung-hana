@@ -95,8 +95,11 @@
 
   function paint(id) {
     const t = byId(id);
-    const root = document.documentElement.style;
-    t.c.forEach((hex, i) => root.setProperty("--c" + (i + 1), hex));
+    const root = document.documentElement;
+    t.c.forEach((hex, i) => root.style.setProperty("--c" + (i + 1), hex));
+    // 월 테마에만 문양이 있다. 기본·색약·테스터는 색만 바뀐다.
+    if (t.month >= 1) root.setAttribute("data-theme-mark", t.id);
+    else root.removeAttribute("data-theme-mark");
   }
 
   let cur = store.get();
@@ -128,6 +131,8 @@
       return true;
     },
     isAll: () => own.all,
+    // 개발자 해금을 빼고 "실제로 가졌는가". 화면 설명이 거짓말하지 않게 하려고 나눠 둔다.
+    reallyHas: (id) => own.owned.indexOf(id) >= 0 || ownedYears(id).length > 0,
     // 서버에서 소유 정보를 받으면 알려 준다. 쓸 수 없게 된 테마를 쓰고 있었다면 기본으로 돌린다.
     setOwned(o) {
       own = { owned: (o && o.owned) || [], all: !!(o && o.all) };
@@ -138,6 +143,13 @@
     usable,
     monthNow,
     current: () => cur,
+    // 고르기 전에 칠해만 본다. 저장하지 않으므로 revert() 로 되돌아간다.
+    preview(id) {
+      if (!usable(id)) return false;
+      paint(id);
+      return true;
+    },
+    revert() { paint(cur); },
     apply(id) {
       if (!usable(id)) return false;
       cur = id;
