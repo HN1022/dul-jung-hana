@@ -607,7 +607,7 @@
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
 <script src="i18n.js?v=23"></script>
-<script src="money.js?v=18"></script>
+<script src="money.js?v=19"></script>
 <script src="engine.js?v=13"></script>
 <script src="leaderboard.js?v=16"></script>
 <script>
@@ -1277,7 +1277,6 @@
   let overSubmit = { queued: false };
   function endGame(delay = 0) {
     if (tutOn()) tutStop(true);
-    if (Money && phase !== "over") Money.gameEnded();
     if (phase !== "over") overSubmit = Board ? Board.queue(G) : { queued: false };
     phase = "over";
     drawSet = new Set();
@@ -1304,9 +1303,8 @@
       ${reviveBox()}
       <div class="rankbox" id="overRank"></div>
       <div class="row"><button class="btn soft" type="button" data-act="menu">${t("menu")}</button><button class="btn" type="button" data-act="again">${t("again")}</button></div>`;
-    // 결과 화면에서 넘어가는 순간이 전면광고 자리 (몇 판에 한 번인지는 money.js)
-    o.querySelector('[data-act="again"]').addEventListener("click", () => { Money && Money.maybeInterstitial(); newGame(); });
-    o.querySelector('[data-act="menu"]').addEventListener("click", () => { Money && Money.maybeInterstitial(); o.remove(); goMenu(); });
+    o.querySelector('[data-act="again"]').addEventListener("click", () => { newGame(); });
+    o.querySelector('[data-act="menu"]').addEventListener("click", () => { o.remove(); goMenu(); });
     o.querySelector('[data-act="revive"]')?.addEventListener("click", async (e) => {
       e.currentTarget.disabled = true;
       // 앱: 보상형 광고. 광고가 안 떠도(재고 없음·오프라인) 이어하기는 허용한다.
