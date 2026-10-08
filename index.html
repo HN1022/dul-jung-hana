@@ -431,6 +431,7 @@
   .themeitem .mark { font-size: 12px; color: var(--accent); font-weight: 700; flex: none; }
   .themeitem .yrs { font-size: 11px; color: var(--muted); font-weight: 400; }
   .rankh { margin: 18px 0 0; font-size: 16px; font-weight: 800; }
+  .rankcard > .rankh:first-of-type { margin-top: 4px; }
   /* 테마 미리보기 — 고르면 바로 여기에 칠해진다. 쓰기를 눌러야 저장된다. */
   .tprev { display: flex; align-items: center; gap: 12px; background: var(--board); border-radius: 14px; padding: 12px; }
   .tprevgrid { display: grid; grid-template-columns: repeat(4, 26px); grid-auto-rows: 26px; gap: 4px; flex: none; }
@@ -743,10 +744,11 @@
         <button type="button" class="btn" id="themeUse"></button>
       </div>
     </div>
-    <div class="themelist" id="themeList"></div>
     <h3 class="rankh" data-i18n="mat_title">재질</h3>
     <p class="tag" id="matNote"></p>
     <div class="themelist" id="matList"></div>
+    <h3 class="rankh" data-i18n="theme_list_title">테마 고르기</h3>
+    <div class="themelist" id="themeList"></div>
   </div>
 </div>
 
@@ -804,7 +806,7 @@
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
 <script src="themes.js?v=13"></script>
-<script src="i18n.js?v=32"></script>
+<script src="i18n.js?v=33"></script>
 <script src="money.js?v=19"></script>
 <script src="engine.js?v=15"></script>
 <script src="leaderboard.js?v=17"></script>

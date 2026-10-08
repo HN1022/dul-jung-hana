@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v39";   // v39: 테마·도감에서 뒤로가기
+const VERSION = "v40";   // v40: 테마 화면에서 재질을 위로
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
