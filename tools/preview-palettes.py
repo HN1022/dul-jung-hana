@@ -44,7 +44,7 @@ def worst(colors, mode):
 
 
 rows = []
-for name, colors in PALETTES:
+for name, colors, *rest in PALETTES:
     cells = []
     for label, mode in MODES:
         shown = [c if mode is None else hexof(cp.simulate(cp.hex_rgb(c), mode)) for c in colors]

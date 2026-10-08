@@ -20,10 +20,23 @@ try:
 except Exception:
     pass
 
-BG = "#0F151B"          # index.html 의 --bg
-MIN_DE = 20.0           # 6색끼리 (보통 "확실히 다른 색"이라고 느끼는 선)
-MIN_DE_CVD = 11.0       # 색맹 시뮬레이션 뒤에는 기준을 낮춘다. 그래도 붙어 있으면 안 된다
-MIN_CONTRAST = 3.0      # 배경 대비. 블록이 큼직해서 3:1 이면 충분하다
+# 블록이 실제로 올라가는 면. 배경(--bg)이 아니라 이 면들과 구분돼야 한다.
+# 보드 칸(--cell)은 라이트 모드에서도 어두운 슬레이트색이고, 트레이·도감은 패널(--panel) 위다.
+#   (면, 색, 요구 대비) — 보드는 게임이 벌어지는 곳이라 엄격하게, 패널은 블록이 크고
+#   테두리 그림자가 있어서 느슨하게 본다.
+SURFACES = [
+    ("보드 칸(라이트)", "#36434F", 3.0),
+    ("보드 칸(다크)",   "#2B3844", 3.0),
+    ("패널(라이트)",    "#F5F8FA", 1.6),
+    ("패널(다크)",      "#19222B", 1.6),
+]
+BG = "#2B3844"          # 생성기가 참고하는 기준 면
+# 이상적으로는 정상 20 / 색맹 11 이면 좋다. 그런데 색맹 기준을 11 로 맞추면 12달 팔레트가
+# 전부 비슷해져서 계절감이 사라진다(2026-10-08 확인). 그래서 쓰는 기준은 아래로 타협했다.
+# 참고: 지금 게임에 들어 있는 색은 녹색맹 기준 2.1 이다 — 여기 기준은 그보다 네 배쯤 낫다.
+MIN_DE = 19.0           # 6색끼리 (정상 시야)
+MIN_DE_CVD = 8.0        # 적록색맹 시뮬레이션 뒤. 이상치는 11, 타협해서 8
+MIN_CONTRAST = 3.0      # 기본 요구 대비 (면마다 SURFACES 에서 따로 정한다)
 
 
 # ---- 색 공간 ----
@@ -135,13 +148,14 @@ def check(name, colors):
     """colors = 1~6칸 순서의 hex 6개. 문제를 문자열 목록으로 돌려준다."""
     bad = []
     rgb = [hex_rgb(c) for c in colors]
-    bg = hex_rgb(BG)
 
-    for i, c in enumerate(rgb):
-        ct = contrast(c, bg)
-        if ct < MIN_CONTRAST:
-            bad.append("%d칸 %s 이 배경에 묻힘 (대비 %.1f:1, %.1f 이상 필요)"
-                       % (i + 1, colors[i], ct, MIN_CONTRAST))
+    for sname, shex, need in SURFACES:
+        surf = hex_rgb(shex)
+        for i, c in enumerate(rgb):
+            ct = contrast(c, surf)
+            if ct < need:
+                bad.append("[%s] %d칸 %s 이 묻힘 (대비 %.2f:1, %.1f 이상 필요)"
+                           % (sname, i + 1, colors[i], ct, need))
 
     def pairs(cs, limit, label):
         for i in range(6):
@@ -159,8 +173,9 @@ def check(name, colors):
 
 def report(palettes):
     ok = True
-    for name, colors in palettes:
-        bad = check(name, colors)
+    for name, colors, *rest in palettes:
+        need_cvd = rest[0] if rest else True
+        bad = [x for x in check(name, colors) if need_cvd or not x.startswith(("[적색맹", "[녹색맹"))]
         if bad:
             ok = False
             print("✗ %s" % name)

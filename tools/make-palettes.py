@@ -32,29 +32,33 @@ try:
 except Exception:
     pass
 
-BG = cp.hex_rgb(cp.BG)
+SURFACES = [(cp.hex_rgb(h), need) for _, h, need in cp.SURFACES]
 
 # 달마다 "이 색들이 많이 보였으면" 하는 기준 색상(0~360). 6개를 순서대로 1칸~6칸에 쓴다.
 # 계절 분위기는 이 기준에서 나오고, 구분은 생성기가 책임진다.
+# (이름, 기준 색상 6개, 색약을 얼마나 챙길지)
+#   cvd=2.0 → 색약 우선. 기본·색약 전용 테마가 이 쪽.
+#   cvd=0.0 → 계절감 우선. 월 테마는 본인이 골라 쓰는 거라 안 맞으면 "색약" 테마를 쓰면 된다.
 MOODS = [
-    ("기본",        [210, 250, 160,  45,  15, 290]),
-    ("1월 설경",    [205, 230, 190,  50, 340, 275]),
-    ("2월 동백",    [200, 235, 150,  45, 355, 300]),
-    ("3월 개나리",  [205, 245, 130,  52,  25, 285]),
-    ("4월 벚꽃",    [210, 240, 165,  48, 340, 295]),
-    ("5월 신록",    [200, 225, 120,  70,  20, 280]),
-    ("6월 수국",    [205, 235, 180,  50, 330, 270]),
-    ("7월 바다",    [195, 220, 175,  48,  12, 290]),
-    ("8월 해바라기",[205, 240, 140,  45,  18, 295]),
-    ("9월 들국화",  [210, 250, 155,  55, 335, 285]),
-    ("10월 단풍",   [200, 235, 130,  38,   8, 300]),
-    ("11월 낙엽",   [205, 230, 115,  40,  18, 290]),
-    ("12월 성탄",   [200, 240, 145,  48,   0, 295]),
+    ("기본",        [195, 205, 155,  25, 350, 250], 2.0),
+    ("색약",        [195, 230, 150,  60,  20, 285], 3.0),
+    ("1월 설경",    [200, 215, 230, 190, 250, 205], 0.0),
+    ("2월 동백",    [355,   5, 140, 120,  40, 350], 0.0),
+    ("3월 개나리",  [ 55,  48,  90, 110,  35, 150], 0.0),
+    ("4월 벚꽃",    [340, 350, 330, 320,  20, 130], 0.0),
+    ("5월 신록",    [100, 120,  85, 140,  70, 160], 0.0),
+    ("6월 수국",    [270, 250, 290, 215, 310, 180], 0.0),
+    ("7월 바다",    [195, 205, 185, 215,  45, 170], 0.0),
+    ("8월 해바라기",[ 45,  40,  55,  30, 100,  20], 0.0),
+    ("9월 들국화",  [300, 320, 285, 340,  50, 110], 0.0),
+    ("10월 단풍",   [ 20,  10,  35,  45,   0, 100], 0.0),
+    ("11월 낙엽",   [ 30,  25,  40,  15,  45,  55], 0.0),
+    ("12월 성탄",   [355,   0, 140, 130,  45,  10], 0.0),
 ]
 
-L_MIN, L_MAX = 48.0, 84.0     # 너무 어두우면 배경에 묻히고, 너무 밝으면 흰색처럼 보인다
+L_MIN, L_MAX = 46.0, 80.0     # 너무 어두우면 배경에 묻히고, 너무 밝으면 흰색처럼 보인다
 C_MIN, C_MAX = 10.0, 62.0     # 채도. 1칸은 일부러 흐리게 둘 수 있어서 하한을 낮게
-HUE_PULL = 2.2                # 기준 색상에서 1도 벗어날 때마다 깎는 점수. 높을수록 계절감이 남는다
+HUE_PULL = 1.1                # 기준 색상에서 1도 벗어날 때마다 깎는 점수. 높을수록 계절감이 남는다
 # 색맹 기준을 얼마나 지킬지. 완벽히 맞추면 12달이 전부 비슷해져서 계절감이 사라진다(2026-10-08 확인).
 # 그래서 "지금 색(녹색맹 2.1)보다는 확실히 낫게"를 바닥으로 깔고 계절감 쪽에 무게를 준다.
 CVD_TARGET = 8.0              # 여기까지는 점수로 끌어올린다
@@ -78,7 +82,7 @@ def to_hex(rgb):
     return "#" + "".join("%02X" % round(max(0, min(1, c)) * 255) for c in rgb)
 
 
-def score(params, hues):
+def score(params, hues, cvd=2.0):
     """클수록 좋다. 가장 가까운 두 색의 거리(세 시야 중 최악)에서 벌점을 뺀다."""
     rgb = [cp.hex_rgb(to_hex(lch_to_rgb(*p))) for p in params]   # 표현 가능한 색으로 한 번 접어서 잰다
     # 각 시야에서 "가장 가까운 두 색의 거리". 목표치까지만 점수로 쳐 주고 그 위는 안 쳐 준다
@@ -87,21 +91,29 @@ def score(params, hues):
     for mode, target in ((None, cp.MIN_DE), ("적색맹", CVD_TARGET), ("녹색맹", CVD_TARGET)):
         cs = rgb if mode is None else [cp.simulate(c, mode) for c in rgb]
         w = min(cp.de2000(cs[i], cs[j]) for i in range(6) for j in range(i + 1, 6))
-        val += min(w, target) * (1.0 if mode is None else 2.0)
-        if mode is not None and w < CVD_FLOOR:
-            val -= 60 * (CVD_FLOOR - w)      # 하한을 깨면 크게 깎는다
+        if mode is None:
+            val += min(w, target)
+            # 정상 시야 구분은 색약과 무관하게 지켜야 한다. 여기가 무너지면 모두에게 안 보인다.
+            if w < cp.MIN_DE:
+                val -= 80 * (cp.MIN_DE - w)
+        elif cvd > 0:
+            val += min(w, target * (cvd / 2.0)) * cvd
+            if w < CVD_FLOOR:
+                val -= 60 * (CVD_FLOOR - w)      # 하한을 깨면 크게 깎는다
     worst = val
     pen = 0.0
     for (L, C, h), want in zip(params, hues):
         diff = abs((h - want + 180) % 360 - 180)
         pen += HUE_PULL * diff
-        ct = cp.contrast(cp.hex_rgb(to_hex(lch_to_rgb(L, C, h))), BG)
-        if ct < cp.MIN_CONTRAST:
-            pen += 300 * (cp.MIN_CONTRAST - ct)
+        col = cp.hex_rgb(to_hex(lch_to_rgb(L, C, h)))
+        for surf, need in SURFACES:          # 블록이 올라가는 면마다 전부 확인
+            ct = cp.contrast(col, surf)
+            if ct < need:
+                pen += 300 * (need - ct)
     return worst - pen
 
 
-def make(name, hues, seed=0, rounds=26000):
+def make(name, hues, cvd=2.0, seed=0, rounds=26000):
     rnd = random.Random(hash(name) & 0xFFFF if seed == 0 else seed)
     # 출발: 기준 색상 그대로, 밝기는 넓게 벌려 둔다(색맹에게는 밝기가 주된 단서라서)
     best = [[L_MIN + (L_MAX - L_MIN) * k / 5, 42.0, float(h)] for k, h in enumerate(hues)]
@@ -109,7 +121,7 @@ def make(name, hues, seed=0, rounds=26000):
     for p, h in zip(best, hues):
         p[2] = float(h)
     cur = [p[:] for p in best]
-    cs, bs = score(cur, hues), score(best, hues)
+    cs, bs = score(cur, hues, cvd), score(best, hues, cvd)
     for step in range(rounds):
         t = 1.0 - step / rounds                     # 처음엔 크게, 나중엔 조금씩 흔든다
         cand = [p[:] for p in cur]
@@ -117,7 +129,7 @@ def make(name, hues, seed=0, rounds=26000):
         cand[i][0] = max(L_MIN, min(L_MAX, cand[i][0] + rnd.gauss(0, 9 * t + 1)))
         cand[i][1] = max(C_MIN, min(C_MAX, cand[i][1] + rnd.gauss(0, 12 * t + 1)))
         cand[i][2] = (cand[i][2] + rnd.gauss(0, 26 * t + 2)) % 360
-        s = score(cand, hues)
+        s = score(cand, hues, cvd)
         if s > cs:
             cur, cs = cand, s
             if s > bs:
@@ -128,10 +140,10 @@ def make(name, hues, seed=0, rounds=26000):
 if __name__ == "__main__":
     want = " ".join(sys.argv[1:]).strip()
     out = []
-    for name, hues in MOODS:
+    for name, hues, cvd in MOODS:
         if want and want != name:
             continue
-        colors, s = make(name, hues)
+        colors, s = make(name, hues, cvd)
         rgb = [cp.hex_rgb(c) for c in colors]
         def mn(mode):
             cs = rgb if mode is None else [cp.simulate(c, mode) for c in rgb]

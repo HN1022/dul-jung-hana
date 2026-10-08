@@ -29,12 +29,20 @@
     --btn: #1B2733;
     --btn-ink: #F5F8FA;
     --overlay: rgba(27, 39, 51, 0.82);
-    --c1: #8DA2B8;
-    --c2: #7F8DF0;
-    --c3: #3FC1A0;
-    --c4: #F2B640;
-    --c5: #EE6A50;
-    --c6: #B65FD2;
+    /* 블록 색. 크기를 알아보는 단서라 아무렇게나 못 바꾼다 — tools/check-palettes.py 로 검사할 것.
+       테마가 바꾸는 건 여기 여섯 개뿐이다(아래 --accent/--warn/--hot 은 건드리지 않는다). */
+    --c1: #009AAC;
+    --c2: #81CFFF;
+    --c3: #52B085;
+    --c4: #EF835D;
+    --c5: #D4B5B7;
+    --c6: #8689B1;
+    /* UI 강조색. 예전엔 --c3/--c4/--c5 를 같이 썼는데, 그러면 테마로 블록 색을 바꾸는 순간
+       점수 글자나 버튼까지 같이 바뀌어 안 보이게 된다. 그래서 떼어 놓는다. */
+    --accent: #3FC1A0;
+    --link: #7F8DF0;
+    --warn: #F2B640;
+    --hot: #EE6A50;
     --bad: #FF4D5E;
     --flash: #FFFFFF;
     --stone: #7C8793;
@@ -98,7 +106,7 @@
   header { display: flex; align-items: center; gap: 6px; }
   header .chip { min-width: 0; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }   /* 좁은 폰에서 점수 칸이 밀려나지 않게 */
   h1 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.03em; }
-  h1 em { font-style: normal; color: var(--c5); }
+  h1 em { font-style: normal; color: var(--hot); }
   .chip {
     flex: none; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
     border: 0; border-radius: 11px; padding: 9px 11px; background: var(--panel);
@@ -117,13 +125,13 @@
   .score.big b { font-size: 22px; }   /* 점수·최고를 같은 크기로 */
   .plus {
     position: absolute; left: 50%; top: 18px; pointer-events: none;
-    font-family: "Baloo 2", system-ui, sans-serif; font-weight: 800; font-size: 18px; color: var(--c3);
+    font-family: "Baloo 2", system-ui, sans-serif; font-weight: 800; font-size: 18px; color: var(--accent);
     animation: rise 700ms ease-out forwards;
   }
   @keyframes rise { from { transform: translate(-50%, 0); opacity: 1; } to { transform: translate(-50%, -34px); opacity: 0; } }
 
   button { font: inherit; color: inherit; }
-  button:focus-visible { outline: 3px solid var(--c4); outline-offset: 2px; }
+  button:focus-visible { outline: 3px solid var(--warn); outline-offset: 2px; }
 
   .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
   .modes { display: inline-flex; background: var(--panel); border-radius: 11px; padding: 3px; gap: 2px; }
@@ -183,7 +191,7 @@
     animation: toast 900ms ease-out forwards;
   }
   .toast.notice { top: 22%; font-size: clamp(20px, 6vw, 28px); animation-duration: 1400ms; }
-  .toast small { display: block; text-align: center; font-size: 0.5em; color: var(--c4); }
+  .toast small { display: block; text-align: center; font-size: 0.5em; color: var(--warn); }
   @keyframes toast { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 20% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(-50%, -90%) scale(1); opacity: 0; } }
 
   .stepline { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -200,7 +208,7 @@
   .cell.garbage-in { z-index: 2; animation: thud 320ms cubic-bezier(0.3, 0, 0.6, 1.4); }
   @keyframes thud { 0% { transform: scale(1.8); opacity: 0; } 60% { transform: scale(0.92); opacity: 1; } 100% { transform: scale(1); } }
   .step { margin: 0; min-height: 22px; font-size: 15px; font-weight: 700; text-wrap: balance; }
-  .step b { color: var(--c5); margin-right: 5px; }
+  .step b { color: var(--hot); margin-right: 5px; }
   .step small { font-weight: 500; color: var(--muted); font-size: 13px; margin-left: 4px; }
 
   .tray { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -215,7 +223,7 @@
     border: 0;
     transition: box-shadow 120ms ease;
   }
-  .slot.match { box-shadow: 0 0 0 3px var(--c3); }
+  .slot.match { box-shadow: 0 0 0 3px var(--accent); }
   button.slot { cursor: pointer; transition: transform 90ms ease; }
   button.slot:active { transform: scale(0.96); }
   .sizecard { display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -244,18 +252,18 @@
   .drag i { border-radius: 5px; }
   .slot.nofit { grid-template-rows: 1fr auto; }
   .tag { font-size: 13px; color: var(--muted); }
-  .sizecard .pts { font-size: 13px; font-weight: 700; color: var(--c3); }
+  .sizecard .pts { font-size: 13px; font-weight: 700; color: var(--accent); }
   .ptag {
     position: absolute; right: 8px; bottom: 6px;
     font-size: 12px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums;
   }
-  .ptag.tricky { color: #2B1D00; background: var(--c4); padding: 1px 7px; border-radius: 99px; }
-  .holdstar { position: absolute; left: 4px; bottom: 2px; font-size: 11px; color: var(--c4); }
+  .ptag.tricky { color: #2B1D00; background: var(--warn); padding: 1px 7px; border-radius: 99px; }
+  .holdstar { position: absolute; left: 4px; bottom: 2px; font-size: 11px; color: var(--warn); }
 
   .status { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; }
   .status p { margin: 0; font-size: 14px; color: var(--muted); }
   .status .pickrow { display: inline-flex; gap: 6px; margin-left: 8px; vertical-align: middle; }
-  .status p.ok { color: var(--c3); font-weight: 700; }
+  .status p.ok { color: var(--accent); font-weight: 700; }
   .status p.bad { color: var(--bad); font-weight: 700; }
   .plainbtn {
     border: 0; background: transparent; color: var(--muted); font-size: 13px; font-weight: 700;
@@ -265,7 +273,7 @@
   .row { display: flex; gap: 8px; }
   .btn {
     border: 0; border-radius: 12px; padding: 10px 18px; cursor: pointer;
-    background: var(--c4); color: #2B1D00; font-size: 15px; font-weight: 700;
+    background: var(--warn); color: #2B1D00; font-size: 15px; font-weight: 700;
   }
   .btn.soft { background: var(--bg); color: var(--ink); }
   .btn.small { padding: 7px 14px; font-size: 13px; background: var(--panel); color: var(--ink); }
@@ -282,10 +290,10 @@
   .overlay h2 { margin: 0; font-size: 28px; font-weight: 900; }
   .overlay p { margin: 0; font-size: 15px; opacity: 0.85; }
   .overlay .big { font-family: "Baloo 2", system-ui, sans-serif; font-size: 56px; font-weight: 800; line-height: 1; }
-  .overlay .new { color: var(--c4); font-weight: 700; }
+  .overlay .new { color: var(--warn); font-weight: 700; }
   .overlay .btn { margin-top: 6px; }
   .revivebox { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .revivebox .btn { background: var(--c3); color: #06261D; }
+  .revivebox .btn { background: var(--accent); color: #06261D; }
   .revivebox small { font-size: 12px; opacity: 0.8; }
 
   .rules { font-size: 12.5px; color: var(--muted); line-height: 1.65; margin: 0; }
@@ -316,6 +324,23 @@
   .tut .bubble .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .tut .bubble .dots { color: var(--muted); font-size: 12px; }
 
+  /* 테마 고르기 */
+  .themelist { display: flex; flex-direction: column; gap: 8px; }
+  .themeitem {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    background: var(--panel); color: var(--ink); border: 0; border-radius: 12px;
+    padding: 10px 12px; font: inherit; cursor: pointer;
+  }
+  .themeitem[disabled] { cursor: default; opacity: 0.45; }
+  .themeitem.on { box-shadow: inset 0 0 0 2px var(--accent); }
+  .themeitem .ic { font-size: 20px; flex: none; width: 1.4em; text-align: center; }
+  .themeitem .sw { display: flex; gap: 3px; flex: none; }
+  .themeitem .sw i { width: 16px; height: 22px; border-radius: 4px;
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .18), inset 0 2px 0 rgba(255, 255, 255, .25); }
+  .themeitem .tn { flex: 1; font-size: 14px; font-weight: 700; }
+  .themeitem .tn small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+  .themeitem .mark { font-size: 12px; color: var(--accent); font-weight: 700; flex: none; }
+
   /* 블록 도감 — 크기마다 나올 수 있는 모양 전부 */
   .dex { display: flex; flex-direction: column; gap: 18px; }
   .dexsize h3 { margin: 0 0 8px; font-size: 15px; font-weight: 800; }
@@ -326,7 +351,7 @@
     background: var(--panel); border-radius: 10px; padding: 8px 8px 6px; min-width: 54px;
   }
   .dexitem .pt { font-size: 11px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .dexitem.tricky .pt { color: #2B1D00; background: var(--c4); padding: 1px 6px; border-radius: 99px; }
+  .dexitem.tricky .pt { color: #2B1D00; background: var(--warn); padding: 1px 6px; border-radius: 99px; }
 
   .rank {
     position: fixed; inset: 0; z-index: 30; overflow-y: auto;
@@ -350,22 +375,22 @@
     display: grid; grid-template-columns: 2.2em 1fr auto auto; align-items: center; gap: 8px;
     padding: 9px 12px; border-radius: 10px; background: var(--panel); font-variant-numeric: tabular-nums;
   }
-  .ranklist li.me { box-shadow: inset 0 0 0 2px var(--c4); }
+  .ranklist li.me { box-shadow: inset 0 0 0 2px var(--warn); }
   .ranklist .rk { font-family: "Baloo 2", system-ui, sans-serif; font-weight: 800; color: var(--muted); }
   .ranklist li:nth-child(1) .rk { color: #E0A800; }
   .ranklist li:nth-child(2) .rk { color: #9AA7B4; }
   .ranklist li:nth-child(3) .rk { color: #C27A4A; }
   .ranklist .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ranklist .nm em { font-style: normal; color: var(--c3); font-size: 12px; margin-left: 4px; }
+  .ranklist .nm em { font-style: normal; color: var(--accent); font-size: 12px; margin-left: 4px; }
   .ranklist .md { font-size: 11.5px; color: var(--muted); }
   .ranklist .sc { font-family: "Baloo 2", system-ui, sans-serif; font-size: 18px; font-weight: 800; }
   .ranklist .msg { display: block; text-align: center; color: var(--muted); background: transparent; padding: 24px 8px; }
   .ranknote { margin: 0; font-size: 12px; color: var(--muted); }
   .rankgoogle { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--panel); font-size: 12.5px; line-height: 1.5; }
   .rankgoogle p { margin: 0; color: var(--muted); }
-  .rankgoogle .ok { color: var(--c3); font-weight: 700; }
+  .rankgoogle .ok { color: var(--accent); font-weight: 700; }
   .rankgoogle .err { color: var(--bad); font-weight: 700; }
-  .ranklist .nm .own { color: var(--c2); margin-left: 3px; }
+  .ranklist .nm .own { color: var(--link); margin-left: 3px; }
   .ranklist .nm .ttl { display: block; font-size: 11.5px; font-weight: 700; color: #C08A00; line-height: 1.3; }
   .seasonrow { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 15px; }
   .seasonrow .chip { min-width: 40px; }
@@ -381,7 +406,7 @@
     font: inherit; color: var(--ink); background: var(--panel); border: 0; border-radius: 10px;
     padding: 8px 10px; width: 9em; text-align: center;
   }
-  .rankbox .ok { color: var(--c3); font-weight: 700; }
+  .rankbox .ok { color: var(--accent); font-weight: 700; }
   /* 지난달 결산 */
   .recap { display: flex; flex-direction: column; gap: 6px; }
   .recap .row {
@@ -413,7 +438,7 @@
   }
   .holdslot.empty, .holdslot.locked { background: transparent; box-shadow: inset 0 0 0 2px var(--panel); }
   .holdslot.locked { cursor: pointer; font-size: 16px; }
-  .holdslot.match { box-shadow: 0 0 0 3px var(--c3); }
+  .holdslot.match { box-shadow: 0 0 0 3px var(--accent); }
   .holdslot.nofit .piece { opacity: 0.28; }
   .holdslot .tag { font-size: 13px; color: var(--muted); }
   .storebtn {
@@ -471,7 +496,7 @@
   .shopdesc b { font-size: 16px; }
   .shopdesc span { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
   .shopitem .btn { flex: none; min-width: 96px; }
-  .shopmsg { margin: 0; min-height: 20px; text-align: center; font-size: 14px; font-weight: 700; color: var(--c3); }
+  .shopmsg { margin: 0; min-height: 20px; text-align: center; font-size: 14px; font-weight: 700; color: var(--accent); }
   .shoplinks { display: flex; justify-content: center; gap: 12px; }
   .start .row .btn { flex: 1; padding-block: 14px; font-size: 16px; }
 
@@ -546,6 +571,7 @@
     </div>
     <button type="button" class="btn soft" id="startRank" data-i18n="rank_btn">🏆 순위표</button>
 
+    <button type="button" class="btn soft" id="startTheme" data-i18n="theme_btn">🎨 테마</button>
     <button type="button" class="btn soft" id="startDex" data-i18n="dex_btn">🧩 블록 도감</button>
     <button type="button" class="btn soft" id="startTut" data-i18n="tut_again">🎓 안내 다시 보기</button>
 
@@ -581,6 +607,17 @@
     <ol class="ranklist" id="rankList"></ol>
     <p class="ranknote" data-i18n="rank_prof_hint">이름을 누르면 그 사람이 모은 칭호를 볼 수 있어요.</p>
     <p class="ranknote" data-i18n="rank_note">✓ 표시는 매일 밤 리플레이 검증을 통과한 기록이에요</p>
+  </div>
+</div>
+
+<div class="rank" id="themeModal" hidden>
+  <div class="rankcard">
+    <div class="titlerow">
+      <h2 data-i18n="theme_title">테마</h2>
+      <button type="button" class="chip" id="themeClose" data-i18n="close">닫기</button>
+    </div>
+    <p class="tag" data-i18n="theme_note">블록 색만 바뀌어요. 달마다 다른 테마가 열리고, 그달에만 쓸 수 있어요.</p>
+    <div class="themelist" id="themeList"></div>
   </div>
 </div>
 
@@ -637,7 +674,8 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="i18n.js?v=25"></script>
+<script src="themes.js?v=2"></script>
+<script src="i18n.js?v=26"></script>
 <script src="money.js?v=19"></script>
 <script src="engine.js?v=15"></script>
 <script src="leaderboard.js?v=16"></script>
@@ -1905,6 +1943,38 @@
       body.appendChild(sec);
     }
   }
+  // 테마 고르기. 색은 themes.js 가 쥐고 있고 여기서는 목록만 그린다.
+  function renderThemes() {
+    const box = $("themeList");
+    box.textContent = "";
+    Themes.list().forEach((th) => {
+      const on = Themes.current() === th.id;
+      const can = Themes.usable(th.id);
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "themeitem" + (on ? " on" : "");
+      if (!can) b.disabled = true;
+      b.innerHTML = `<span class="ic">${th.icon}</span>`
+        + `<span class="sw">${th.c.map((c) => `<i style="background:${c}"></i>`).join("")}</span>`;
+      const nm = document.createElement("span");
+      nm.className = "tn";
+      nm.innerHTML = esc(t("theme_" + th.id)) + "<small>" + esc(
+        th.month === 0 ? t("theme_always") : can ? t("theme_open_now") : t("theme_locked", { m: th.month })
+      ) + "</small>";
+      b.appendChild(nm);
+      if (on) {
+        const m = document.createElement("span");
+        m.className = "mark";
+        m.textContent = t("theme_using");
+        b.appendChild(m);
+      }
+      if (can) b.addEventListener("click", () => { Themes.apply(th.id); renderThemes(); renderBoard(); renderTray(false); });
+      box.appendChild(b);
+    });
+  }
+  $("startTheme").addEventListener("click", () => { renderThemes(); $("themeModal").hidden = false; });
+  $("themeClose").addEventListener("click", () => { $("themeModal").hidden = true; });
+
   $("startDex").addEventListener("click", () => { buildDex(); $("dexModal").hidden = false; });
   $("dexClose").addEventListener("click", () => { $("dexModal").hidden = true; });
 
