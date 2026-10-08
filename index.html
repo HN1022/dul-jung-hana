@@ -93,14 +93,16 @@
   }
   /* 게임 화면은 스크롤 없이 한 화면에 들어간다 — 남는 높이에 맞춰 보드가 줄어든다(긴 폰 대응) */
   .app {
-    max-width: 440px;
+    /* 요즘 큰 폰은 CSS 기준으로도 480px 가까이 된다. 440 에 묶어 두면 보드가 폭에 막혀
+       양옆이 남는다(S26+ 에서 확인). 넉넉히 두고, 보드 자체는 높이에도 맞추니 안 커진다. */
+    max-width: 520px;
     margin: 0 auto;
     box-sizing: border-box;
     min-height: 100dvh;
     padding-inline: 16px;
     padding-top: calc(var(--top-gap) + 20px);
     padding-bottom: calc(var(--bottom-gap) + 24px);
-    display: flex; flex-direction: column; gap: 12px;
+    display: flex; flex-direction: column; gap: 10px;
   }
 
   header { display: flex; align-items: center; gap: 6px; }
@@ -215,7 +217,9 @@
   .tray.single { grid-template-columns: 1fr; }
   .slot {
     position: relative;
-    min-height: clamp(104px, 17dvh, 140px);
+    /* 보드가 먼저다. 긴 폰에서 하단 광고까지 들어가면 남는 높이를 트레이가 다 먹어서
+       보드만 작아졌다(378 → 311px). 그래서 칸 높이를 줄이고 보드에 양보한다. */
+    min-height: clamp(88px, 13dvh, 118px);
     border-radius: 14px;
     background: var(--panel);
     display: grid; place-items: center;
@@ -532,7 +536,7 @@
   .holdbar { display: grid; grid-template-columns: repeat(var(--slots, 3), 1fr); gap: 6px 12px; align-items: stretch; }
   .holdlabel { grid-column: 1 / -1; display: flex; align-items: center; font-size: 13px; font-weight: 700; color: var(--muted); white-space: nowrap; }
   .holdslot {
-    position: relative; min-height: clamp(54px, 8.5dvh, 66px); border-radius: 12px; padding: 5px; border: 0;
+    position: relative; min-height: clamp(46px, 7dvh, 56px); border-radius: 12px; padding: 5px; border: 0;
     background: var(--panel); display: grid; place-items: center; color: inherit;
     transition: box-shadow 120ms ease;
   }

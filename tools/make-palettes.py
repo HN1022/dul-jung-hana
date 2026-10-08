@@ -40,20 +40,24 @@ SURFACES = [(cp.hex_rgb(h), need) for _, h, need in cp.SURFACES]
 #   cvd=2.0 → 색약 우선. 기본·색약 전용 테마가 이 쪽.
 #   cvd=0.0 → 계절감 우선. 월 테마는 본인이 골라 쓰는 거라 안 맞으면 "색약" 테마를 쓰면 된다.
 MOODS = [
-    ("기본",        [195, 205, 155,  25, 350, 250], 2.0),
-    ("색약",        [195, 230, 150,  60,  20, 285], 3.0),
-    ("1월 설경",    [200, 215, 230, 190, 250, 205], 0.0),
-    ("2월 동백",    [355,   5, 140, 120,  40, 350], 0.0),
-    ("3월 개나리",  [ 55,  48,  90, 110,  35, 150], 0.0),
-    ("4월 벚꽃",    [340, 350, 330, 320,  20, 130], 0.0),
-    ("5월 신록",    [100, 120,  85, 140,  70, 160], 0.0),
-    ("6월 수국",    [270, 250, 290, 215, 310, 180], 0.0),
-    ("7월 바다",    [195, 205, 185, 215,  45, 170], 0.0),
-    ("8월 해바라기",[ 45,  40,  55,  30, 100,  20], 0.0),
-    ("9월 들국화",  [300, 320, 285, 340,  50, 110], 0.0),
-    ("10월 단풍",   [ 20,  10,  35,  45,   0, 100], 0.0),
-    ("11월 낙엽",   [ 30,  25,  40,  15,  45,  55], 0.0),
-    ("12월 성탄",   [355,   0, 140, 130,  45,  10], 0.0),
+    # (이름, 기준 색상 6개, 색약 가중치, 색상을 붙드는 세기)
+    #   색약 2~3 = 기본·색약 테마. 0 = 월 테마(계절감 우선, 안 맞으면 "색약" 테마를 쓰면 된다).
+    #   붙드는 세기가 클수록 이름값을 한다. 개나리는 노랑에 꽉 붙들고, 불꽃놀이는 일부러 풀어 둔다.
+    #   한 가지 색으로만 채우면 크기 구분이 깨지므로, 어느 테마든 받쳐 주는 색 두어 개를 섞어 둔다.
+    ("기본",         [195, 205, 155,  25, 350, 250], 2.0, 1.0),
+    ("색약",         [195, 230, 150,  60,  20, 285], 3.0, 1.0),
+    ("1월 설경",     [200, 215, 230, 185, 250, 165], 0.0, 4.0),
+    ("2월 동백",     [350, 358, 340, 140,  15, 320], 0.0, 4.0),
+    ("3월 개나리",   [ 50,  45,  55,  38,  95,  25], 0.0, 5.5),   # 노랑을 꽉 붙든다
+    ("4월 벚꽃",     [335, 345, 325, 350, 290, 110], 0.0, 4.0),
+    ("5월 장미",     [352, 340,   5, 325, 125,  20], 0.0, 4.0),
+    ("6월 수국",     [265, 280, 250, 215, 300, 185], 0.0, 4.0),
+    ("7월 바다",     [195, 205, 185, 215, 170,  45], 0.0, 4.0),
+    ("8월 불꽃놀이", [ 20,  50, 120, 200, 280, 330], 0.0, 0.8),   # 원래 여러 색이라 풀어 둔다
+    ("9월 단풍",     [ 20,  10,  35,  45,   0,  60], 0.0, 4.5),
+    ("10월 할로윈",  [ 28, 290,  95, 310, 352, 262], 0.0, 4.0),
+    ("11월 낙엽",    [ 30,  22,  40,  15,  48,   8], 0.0, 4.5),
+    ("12월 성탄",    [355,   5, 140, 130,  45, 345], 0.0, 4.0),
 ]
 
 L_MIN, L_MAX = 46.0, 80.0     # 너무 어두우면 배경에 묻히고, 너무 밝으면 흰색처럼 보인다
@@ -82,7 +86,7 @@ def to_hex(rgb):
     return "#" + "".join("%02X" % round(max(0, min(1, c)) * 255) for c in rgb)
 
 
-def score(params, hues, cvd=2.0):
+def score(params, hues, cvd=2.0, pull=1.0):
     """클수록 좋다. 가장 가까운 두 색의 거리(세 시야 중 최악)에서 벌점을 뺀다."""
     rgb = [cp.hex_rgb(to_hex(lch_to_rgb(*p))) for p in params]   # 표현 가능한 색으로 한 번 접어서 잰다
     # 각 시야에서 "가장 가까운 두 색의 거리". 목표치까지만 점수로 쳐 주고 그 위는 안 쳐 준다
@@ -104,7 +108,7 @@ def score(params, hues, cvd=2.0):
     pen = 0.0
     for (L, C, h), want in zip(params, hues):
         diff = abs((h - want + 180) % 360 - 180)
-        pen += HUE_PULL * diff
+        pen += HUE_PULL * pull * diff
         col = cp.hex_rgb(to_hex(lch_to_rgb(L, C, h)))
         for surf, need in SURFACES:          # 블록이 올라가는 면마다 전부 확인
             ct = cp.contrast(col, surf)
@@ -113,7 +117,7 @@ def score(params, hues, cvd=2.0):
     return worst - pen
 
 
-def make(name, hues, cvd=2.0, seed=0, rounds=26000):
+def make(name, hues, cvd=2.0, pull=1.0, seed=0, rounds=26000):
     rnd = random.Random(hash(name) & 0xFFFF if seed == 0 else seed)
     # 출발: 기준 색상 그대로, 밝기는 넓게 벌려 둔다(색맹에게는 밝기가 주된 단서라서)
     best = [[L_MIN + (L_MAX - L_MIN) * k / 5, 42.0, float(h)] for k, h in enumerate(hues)]
@@ -121,7 +125,7 @@ def make(name, hues, cvd=2.0, seed=0, rounds=26000):
     for p, h in zip(best, hues):
         p[2] = float(h)
     cur = [p[:] for p in best]
-    cs, bs = score(cur, hues, cvd), score(best, hues, cvd)
+    cs, bs = score(cur, hues, cvd, pull), score(best, hues, cvd, pull)
     for step in range(rounds):
         t = 1.0 - step / rounds                     # 처음엔 크게, 나중엔 조금씩 흔든다
         cand = [p[:] for p in cur]
@@ -129,7 +133,7 @@ def make(name, hues, cvd=2.0, seed=0, rounds=26000):
         cand[i][0] = max(L_MIN, min(L_MAX, cand[i][0] + rnd.gauss(0, 9 * t + 1)))
         cand[i][1] = max(C_MIN, min(C_MAX, cand[i][1] + rnd.gauss(0, 12 * t + 1)))
         cand[i][2] = (cand[i][2] + rnd.gauss(0, 26 * t + 2)) % 360
-        s = score(cand, hues, cvd)
+        s = score(cand, hues, cvd, pull)
         if s > cs:
             cur, cs = cand, s
             if s > bs:
@@ -138,18 +142,42 @@ def make(name, hues, cvd=2.0, seed=0, rounds=26000):
 
 
 if __name__ == "__main__":
+    # 찾는 대로 바로 tools/palettes.py 에 쓴다. 오래 걸리는 작업이라, 중간에 끊겨도
+    # 거기까지는 남아 있어야 한다(예전에 파이프 버퍼에 갇힌 채로 통째로 날아간 적이 있다).
     want = " ".join(sys.argv[1:]).strip()
-    out = []
-    for name, hues, cvd in MOODS:
+    out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "palettes.py")
+    header = io.open(out_path, encoding="utf-8").read().split("PALETTES = [")[0]
+    rows = []
+
+    def flush():
+        with io.open(out_path, "w", encoding="utf-8", newline="
+") as f:
+            f.write(header + "PALETTES = [
+" + "".join(rows) + "]
+")
+
+    for name, hues, cvd, pull in MOODS:
         if want and want != name:
             continue
-        colors, s = make(name, hues, cvd)
-        rgb = [cp.hex_rgb(c) for c in colors]
-        def mn(mode):
-            cs = rgb if mode is None else [cp.simulate(c, mode) for c in rgb]
-            return min(cp.de2000(cs[i], cs[j]) for i in range(6) for j in range(i + 1, 6))
-        print('    ("%s", %s),   # 정상 %.1f · 적색맹 %.1f · 녹색맹 %.1f'
-              % (name, str(colors).replace("'", '"'), mn(None), mn("적색맹"), mn("녹색맹")))
-        out.append((name, colors))
-    print()
-    print("위 줄을 tools/palettes.py 의 PALETTES 에 넣으면 된다.")
+        colors = None
+        for seed in range(1, 13):           # 씨앗을 바꿔 가며 조건에 맞는 것을 찾는다
+            c, _ = make(name, hues, cvd, pull, seed=seed, rounds=12000)
+            bad = [x for x in cp.check(name, c) if cvd > 0 or not x.startswith(("[적색맹", "[녹색맹"))]
+            if not bad:
+                colors = c
+                break
+        if colors is None:
+            print("✗ %s — 조건을 못 맞췄어요. 기준 색상이나 붙드는 세기를 손봐야 합니다." % name, flush=True)
+            continue
+        rgb = [cp.hex_rgb(x) for x in colors]
+        mn = lambda m: min(cp.de2000(*((rgb[i], rgb[j]) if m is None
+                                       else (cp.simulate(rgb[i], m), cp.simulate(rgb[j], m))))
+                           for i in range(6) for j in range(i + 1, 6))
+        rows.append('    ("%s", %s, %s),
+' % (name, str(colors).replace("'", '"'), cvd > 0))
+        flush()
+        print("✓ %-14s 정상 %.1f · 적색맹 %.1f · 녹색맹 %.1f (seed %d)"
+              % (name, mn(None), mn("적색맹"), mn("녹색맹"), seed), flush=True)
+
+    print("
+tools/palettes.py 에 %d개 썼습니다." % len(rows), flush=True)
