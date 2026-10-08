@@ -73,7 +73,9 @@
   // 테스터 에디션은 순위와 무관하다. 비공개 테스트에 참여한 사람만 가지며, 순위표에는 나오지 않는다
   // (순위표 줄 박스는 등급만 보여 준다 — 거긴 "이번 달 성적" 자리라서).
   const MATS = ["tester"].concat(RANK_MATS);                // 고르기 목록에 보이는 순서
-  const MAT_MAX = 3;
+  // 몇 개까지 입힐지는 막지 않는다. 여섯 칸을 다 같은 재질로 해도 된다 — 보기에 어떨지는 본인이 판단할 일이고,
+  // 크기를 알려 주는 다른 단서(트레이의 "4칸 블록" 글자, 그리기 중의 미리보기 색)는 그대로 남는다.
+  const MAT_MAX = 6;
   // 등급을 받으면 그보다 낮은 재질도 다 쓸 수 있다(홀로그램이면 금·은·동도).
   function matsOf(tier) {
     const out = [];
@@ -127,14 +129,11 @@
     canUse: (m) => matsOf(myTier).indexOf(m) >= 0,
     mats: () => Object.assign({}, mats),
     // 크기(1~6)에 재질을 입힌다. m 이 없으면 뗀다. 같은 재질을 두 곳에 쓰지 않는다.
+    // 한 크기에는 재질 하나. 같은 재질을 여러 크기에 써도 된다.
     setMat(size, m) {
       if (m && matsOf(myTier).indexOf(m) < 0) return false;   // 못 쓰는 재질
       if (!m) delete mats[size];
-      else {
-        Object.keys(mats).forEach((k) => { if (mats[k] === m) delete mats[k]; });   // 한 재질은 한 곳에만
-        if (Object.keys(mats).length >= MAT_MAX && !mats[size]) return false;        // 세 개까지
-        mats[size] = m;
-      }
+      else mats[size] = m;
       saveMats();
       paintMats();
       return true;
