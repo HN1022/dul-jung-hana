@@ -54,7 +54,11 @@ MOODS = [
 
 L_MIN, L_MAX = 48.0, 84.0     # 너무 어두우면 배경에 묻히고, 너무 밝으면 흰색처럼 보인다
 C_MIN, C_MAX = 10.0, 62.0     # 채도. 1칸은 일부러 흐리게 둘 수 있어서 하한을 낮게
-HUE_PULL = 0.5                # 기준 색상에서 1도 벗어날 때마다 깎는 점수
+HUE_PULL = 2.2                # 기준 색상에서 1도 벗어날 때마다 깎는 점수. 높을수록 계절감이 남는다
+# 색맹 기준을 얼마나 지킬지. 완벽히 맞추면 12달이 전부 비슷해져서 계절감이 사라진다(2026-10-08 확인).
+# 그래서 "지금 색(녹색맹 2.1)보다는 확실히 낫게"를 바닥으로 깔고 계절감 쪽에 무게를 준다.
+CVD_TARGET = 8.0              # 여기까지는 점수로 끌어올린다
+CVD_FLOOR = 6.0               # 이 아래로 내려가면 크게 깎는다 — 타협의 하한선
 
 
 def lch_to_rgb(L, C, h):
@@ -77,14 +81,16 @@ def to_hex(rgb):
 def score(params, hues):
     """클수록 좋다. 가장 가까운 두 색의 거리(세 시야 중 최악)에서 벌점을 뺀다."""
     rgb = [cp.hex_rgb(to_hex(lch_to_rgb(*p))) for p in params]   # 표현 가능한 색으로 한 번 접어서 잰다
-    worst = 1e9
-    for mode in (None, "적색맹", "녹색맹"):
+    # 각 시야에서 "가장 가까운 두 색의 거리". 목표치까지만 점수로 쳐 주고 그 위는 안 쳐 준다
+    # (더 벌리려고 계절감을 버리는 걸 막는다).
+    val = 0.0
+    for mode, target in ((None, cp.MIN_DE), ("적색맹", CVD_TARGET), ("녹색맹", CVD_TARGET)):
         cs = rgb if mode is None else [cp.simulate(c, mode) for c in rgb]
-        for i in range(6):
-            for j in range(i + 1, 6):
-                d = cp.de2000(cs[i], cs[j])
-                # 색맹 쪽은 기준이 낮으므로 같은 자로 재도록 비율을 맞춘다
-                worst = min(worst, d if mode is None else d * (cp.MIN_DE / cp.MIN_DE_CVD))
+        w = min(cp.de2000(cs[i], cs[j]) for i in range(6) for j in range(i + 1, 6))
+        val += min(w, target) * (1.0 if mode is None else 2.0)
+        if mode is not None and w < CVD_FLOOR:
+            val -= 60 * (CVD_FLOOR - w)      # 하한을 깨면 크게 깎는다
+    worst = val
     pen = 0.0
     for (L, C, h), want in zip(params, hues):
         diff = abs((h - want + 180) % 360 - 180)
@@ -126,11 +132,12 @@ if __name__ == "__main__":
         if want and want != name:
             continue
         colors, s = make(name, hues)
-        bad = cp.check(name, colors)
-        mark = "✓" if not bad else "✗"
-        print('    ("%s", %s),%s  # %s' % (name, str(colors).replace("'", '"'), "" if not bad else "   ← 미달", mark))
-        for b in bad:
-            print("        # " + b)
+        rgb = [cp.hex_rgb(c) for c in colors]
+        def mn(mode):
+            cs = rgb if mode is None else [cp.simulate(c, mode) for c in rgb]
+            return min(cp.de2000(cs[i], cs[j]) for i in range(6) for j in range(i + 1, 6))
+        print('    ("%s", %s),   # 정상 %.1f · 적색맹 %.1f · 녹색맹 %.1f'
+              % (name, str(colors).replace("'", '"'), mn(None), mn("적색맹"), mn("녹색맹")))
         out.append((name, colors))
     print()
     print("위 줄을 tools/palettes.py 의 PALETTES 에 넣으면 된다.")
