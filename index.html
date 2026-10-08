@@ -809,7 +809,7 @@
 <script src="i18n.js?v=33"></script>
 <script src="money.js?v=20"></script>
 <script src="engine.js?v=15"></script>
-<script src="leaderboard.js?v=17"></script>
+<script src="leaderboard.js?v=18"></script>
 <script>
 (() => {
   const N = 8;
@@ -2153,7 +2153,9 @@
   // 전원이 홀로그램이 되고, 하루하루 등급이 오르내려서 보상처럼 느껴지지 않는다.
   let rankTiers = {};          // 지난달 기준 { uid: 등급 } — 순위표 이름에도 쓴다
   // 순위표에서 등급을 보여 주는 자리. 줄 박스 전체가 그 재질이 된다 — 멀리서도 "쟤 홀로그램이네" 가 보인다.
-  const matClass = (uid) => (uid && rankTiers[uid] ? "mt " + rankTiers[uid] : "");
+  // 순위표에 오른 사람은 모두 테두리를 갖는다. 지난달 성적이 없으면 가장 아래 등급(동)부터 시작 —
+  // 한 사람만 테두리가 있으면 빠진 것처럼 보인다.
+  const matClass = (uid) => "mt " + ((uid && rankTiers[uid]) || "bronze");
   function loadUnlocks() {
     if (!window.Board || !window.Themes) return;
     Board.myTitles().then((mt) => {

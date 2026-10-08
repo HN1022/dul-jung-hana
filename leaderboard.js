@@ -416,15 +416,18 @@
     const best = {};
     Object.values(boards).forEach((list) => {
       const n = list.length;
+      // "상위 5%"는 1등부터 ceil(0.05 × 인원)등까지라는 뜻이다. 올림이라 사람이 적어도 1등은 늘 최고 등급.
+      // (예전에는 등수÷인원으로 쟀는데, 그러면 1명 중 1등이 1.0 이라 꼴찌 취급을 받았다.)
+      const cut = TIERS.map((t) => Math.max(1, Math.ceil(t.max * n)));
       list.forEach((d, i) => {
-        const p = (i + 1) / n;                      // 1등이면 1/n, 꼴찌면 1
-        if (best[d.uid] === undefined || p < best[d.uid]) best[d.uid] = p;
+        const rank = i + 1;
+        const k = cut.findIndex((c) => rank <= c);
+        const tier = k < 0 ? TIERS.length - 1 : k;
+        if (best[d.uid] === undefined || tier < best[d.uid]) best[d.uid] = tier;   // 작을수록 좋은 등급
       });
     });
     const out = {};
-    Object.entries(best).forEach(([uid, p]) => {
-      out[uid] = (TIERS.find((t) => p <= t.max) || TIERS[TIERS.length - 1]).id;
-    });
+    Object.entries(best).forEach(([uid, k]) => { out[uid] = TIERS[k].id; });
     return out;
   }
 

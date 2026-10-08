@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v42";   // v42: 월 테마를 단색으로
+const VERSION = "v43";   // v43: 등급 계산 고침
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
