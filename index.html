@@ -490,6 +490,22 @@
   .dexitem .pt { font-size: 11px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
   .dexitem.tricky .pt { color: #2B1D00; background: var(--warn); padding: 1px 6px; border-radius: 99px; }
 
+  /* ---- 광고칸 ----
+     하단 배너는 네이티브라서 웹 화면 위에 그냥 덮인다. 여백만 줘서는 모자랐다 — 배너가
+     화면 맨 아래가 아니라 조금 떠서 깔리는 기기가 있어서, 그 밑으로 내용이 비쳤다.
+     그래서 아래에 불투명한 띠를 하나 깔아 둔다. 배너가 앉을 "자리"를 UI 로 만들어 주는 것이다.
+     내용이 여기까지 흘러와도 띠에 가려지지, 광고에 가려져 사라지지 않는다.
+     광고가 없으면(웹·광고 실패) --ad-h 가 0 이라 높이도 0 이 되어 보이지 않는다. */
+  .adslot {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; pointer-events: none;
+    height: var(--ad-h, 0px); background: var(--panel); overflow: hidden;
+  }
+  /* 테두리 선도 띠 안에 둔다 — 높이가 0(광고 없음)이면 overflow:hidden 에 잘려서 안 보인다 */
+  .adslot::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+    background: var(--cell-line);
+  }
+
   .rank {
     position: fixed; inset: 0; z-index: 30; overflow-y: auto;
     background: var(--bg); display: flex; justify-content: center;
@@ -801,6 +817,9 @@
   </div>
 </div>
 
+<!-- 하단 배너가 앉는 자리. 높이는 money.js 가 --ad-h 로 알려 준다(광고 없으면 0). -->
+<div class="adslot" id="adSlot" aria-hidden="true"></div>
+
 <script>
   // 확대 막기: 사파리는 user-scalable=no 를 무시하므로 두 손가락 확대(gesture*)와
   // 두 번 두드리기(dblclick)를 직접 막는다. 한 손가락 조작은 그대로 동작한다.
@@ -825,7 +844,7 @@
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
 <script src="themes.js?v=18"></script>
 <script src="i18n.js?v=33"></script>
-<script src="money.js?v=20"></script>
+<script src="money.js?v=21"></script>
 <script src="engine.js?v=15"></script>
 <script src="leaderboard.js?v=19"></script>
 <script>

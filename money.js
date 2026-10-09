@@ -40,9 +40,16 @@
   // 적응형 배너는 보통 50~60dp 다. 실제 높이는 bannerAdSizeChanged 가 알려 주는데, 그 이벤트가
   // 늦거나 안 올 수도 있다 — 그러면 여백이 0이라 내용이 광고 밑으로 들어간다. 실제로 그랬다.
   // 그래서 배너를 띄우자마자 넉넉히 잡아 두고, 진짜 높이가 오면 그때 맞춘다.
+  // 재어 온 높이도 그대로 믿지 않는다. 배너가 화면 맨 아래에 딱 붙지 않고 조금 떠서 깔리는
+  // 기기가 있어서, 딱 맞게 비우면 그 틈으로 내용이 비쳤다(2026-10-09 사용자 스크린샷).
+  // 그래서 최소치를 두고 여유를 조금 더 얹는다. 자리가 좀 남는 건 괜찮지만 모자라면 글이 가려진다.
   const AD_H_GUESS = 60;
+  const AD_H_MIN = 56;    // 적응형 배너가 이보다 낮게 올 일은 없다
+  const AD_H_PAD = 8;     // 떠 있는 만큼의 여유
   function setAdHeight(px) {
-    document.documentElement.style.setProperty("--ad-h", Math.max(0, Math.round(px || 0)) + "px");
+    const n = Math.round(px || 0);
+    const h = n > 0 ? Math.max(n, AD_H_MIN) + AD_H_PAD : 0;
+    document.documentElement.style.setProperty("--ad-h", h + "px");
   }
 
   async function startAds() {

@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v46";   // v46: 호박 모양 다시 그림 (골이 갈라진 몸통)
+const VERSION = "v47";   // v47: 하단 광고칸을 UI 로 만듦
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
