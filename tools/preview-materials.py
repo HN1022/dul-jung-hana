@@ -69,6 +69,16 @@ def section(title, colors, mark):
     return '<h2>%s</h2><table>%s</table>' % (title, body)
 
 
+# 달마다 그 색 위에 그 문양 — 열두 개를 한눈에 본다
+MONTHS = [(n, c) for n, c, _ in pal.PALETTES if "월" in n]
+def monthrow(name, cols):
+    key = "m%d" % int(name.split("월")[0])
+    mk = MARKS.get(key, "none")
+    cells = "".join('<i style="background:{bg}"><s style="background-image:{mk}"></s></i>'
+                    .format(bg=c, mk=mk) for c in cols)
+    return '<tr><th>%s</th><td><div class="row">%s</div></td></tr>' % (name, cells)
+months = "".join(monthrow(n, c) for n, c in MONTHS)
+
 rank = "".join(
     '<li class="rankrow" style="background-image:{g}"><span class="rk">{i}</span>'
     '<span class="nm">홍길동</span><span class="md">3~5칸·Lv3</span>'
@@ -107,13 +117,17 @@ html = """<!doctype html><meta charset="utf-8"><title>재질·문양 미리보�
 <p class="note">월 테마 문양은 블록마다 옅게 깔린다. 색은 건드리지 않는다. 어느 크기에 어느 재질을 입힐지는 본인이 고른다.</p>
 __BASE__
 __HALLOWEEN__
+<h2>달마다 색과 문양</h2>
+<p class="note">그 달 색 하나에 밝기만 1칸→6칸으로 다르다. 문양은 흰색에 어두운 테두리라 어디서든 보인다.</p>
+<table>__MONTHS__</table>
 <h2>순위표</h2>
 <p class="note">등급을 받은 사람은 줄 박스 자체가 그 재질이 된다. 이름은 평범하게 둔다.</p>
 <ol class="ranklist">__RANK__</ol>
 """
 html = (html.replace("__BASE__", section("기본 테마 (문양 없음)", BASE, None))
             .replace("__HALLOWEEN__", section("10월 할로윈 (호박 문양)", HALLOWEEN, MARKS.get("m10")))
-            .replace("__RANK__", rank))
+            .replace("__RANK__", rank)
+            .replace("__MONTHS__", months))
 
 out = os.path.join(HERE, "material-preview.html")
 io.open(out, "w", encoding="utf-8", newline="\n").write(html)
