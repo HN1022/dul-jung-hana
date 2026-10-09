@@ -16,8 +16,8 @@
   "use strict";
   // 규칙 버전. 1 = 처음 규칙, 2 = 이어하기 추가, 3 = 이어하기 방식 변경(아래).
   // 검증기는 SUPPORTED 에 있는 버전을 모두 다시 돌릴 수 있다(판마다 st.v 에 그 판의 버전이 남는다).
-  const VERSION = 3;
-  const SUPPORTED = [1, 2, 3];
+  const VERSION = 4;
+  const SUPPORTED = [1, 2, 3, 4];
   // 이어하기: 게임오버(놓을 곳 없음) 때 한 판에 1번 쓸 수 있다.
   // (하루 2번 제한과 광고는 화면·money.js 가 맡는다 — 규칙 쪽은 "판당 1번"만 지킨다)
   //   버전 2: 빈칸에 1~3칸을 직접 그려서 놓았다. 테스터들이 "이득이 없다"고 했다 — 한 칸 더 놓아 봐야
@@ -38,6 +38,17 @@
     3: { every: 3, count: 2, mult: 2 },
     4: { every: 2, count: 2, mult: 3 },
   };
+
+  // 점수가 오를수록 방해 블록이 한 칸씩 늘어난다 (v4 부터).
+  // 작은 블록만 고르며 버티면 판이 끝나지 않는다는 이야기가 있었다(2026-10-09). 난이도를 올리는
+  // 게 아니라 **같은 난이도 안에서 판이 길어질수록** 조여 오게 하는 것이다.
+  //   5000점마다 한 단계, 최대 4단계. 한 번에 떨어지는 칸 수가 단계만큼 늘어난다.
+  //   예) 난이도 3(2턴마다 2칸)은 5000점부터 3칸, 10000점부터 4칸 … 20000점부터 6칸.
+  // 프리 모드는 그대로다(방해 블록 자체가 없다).
+  const RAMP_EVERY = 5000;
+  const RAMP_MAX = 4;
+  const rampStep = (st) =>
+    (st.v >= 4 ? Math.min(RAMP_MAX, Math.floor((st.score || 0) / RAMP_EVERY)) : 0);
 
   // ---- 무작위 (seed 고정) ----
   // mulberry32. 상태는 st.rng(32비트 정수) 하나라서 저장·복원이 쉽다.
@@ -423,7 +434,8 @@
     if (st.turnsLeft > 0) return [];
     st.turnsLeft = L.every;
     const added = [];
-    for (let k = 0; k < L.count; k++) {
+    const count = L.count + rampStep(st);   // 점수가 오를수록 더 떨어진다
+    for (let k = 0; k < count; k++) {
       // 빈칸이 2개 이상인 줄에만 → 방해 블록이 혼자 줄을 완성하지 않는다
       const options = [];
       for (let r = 0; r < N; r++) {
@@ -481,7 +493,7 @@
   const maxScore = (level, turns) => Math.ceil(LEVELS[level].mult * (32 * turns + 360 * turns * (turns + 1) / 2));
 
   const Engine = {
-    VERSION, SUPPORTED, N, MODES, LEVELS, GROWTH_TURNS, REVIVE_MAX_CELLS,
+    VERSION, SUPPORTED, N, MODES, LEVELS, GROWTH_TURNS, REVIVE_MAX_CELLS, RAMP_EVERY, RAMP_MAX, rampStep,
     REVIVE_ROWS_MIN, REVIVE_ROWS_MAX,
     create, chooseSize, place, store, setSlots, rotateItem, replay, revive, canRevive,
     items, isStuck, fits, anyFit, fitsAnyRotation, fullRows,

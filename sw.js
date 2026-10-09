@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v52";   // v52: 보관함 1칸, 재질 견본 색 통일, 광고칸이 안전영역까지
+const VERSION = "v53";   // v53: 점수 5000마다 방해 블록 +1, 순위 등급 즉시 갱신
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [

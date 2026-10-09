@@ -863,9 +863,9 @@
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
 <script src="themes.js?v=18"></script>
-<script src="i18n.js?v=33"></script>
+<script src="i18n.js?v=34"></script>
 <script src="money.js?v=21"></script>
-<script src="engine.js?v=15"></script>
+<script src="engine.js?v=16"></script>
 <script src="leaderboard.js?v=21"></script>
 <script>
 (() => {
@@ -1762,8 +1762,17 @@
   // 고른 시즌의 순위를 불러온다. 늦게 온 옛 시즌 응답이 새 화면을 덮지 않게 시즌을 확인한다.
   function loadRank() {
     const sn = rankSeason;
-    return Board.top(200, sn).then((rows) => { if (sn === rankSeason) rankRows = rows; })
-      .catch(() => { if (sn === rankSeason) rankRows = "offline"; }).finally(renderRankList);
+    return Board.top(200, sn).then((rows) => {
+      if (sn !== rankSeason) return;
+      rankRows = rows;
+      // 등급 기준이 지금 보고 있는 시즌이면(테스터 달) 방금 받아 온 순위로 등급도 다시 센다.
+      // 안 그러면 앱을 켠 순간의 등급이 남아서, 점수를 올려 등수가 바뀌어도 줄 색이 그대로다
+      // (2등인데 은색으로 보였다 — 2026-10-09).
+      if (sn === tierBasis()) {
+        rankTiers = Board.tiers(rows);
+        if (window.Themes) Themes.setTier(rankTiers.byUid[Board.myUid()] || null);
+      }
+    }).catch(() => { if (sn === rankSeason) rankRows = "offline"; }).finally(renderRankList);
   }
   function renderSeason() {
     const all = Board.seasons(), i = all.indexOf(rankSeason);
@@ -2077,7 +2086,8 @@
     document.querySelectorAll("#startMode button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === pickMode)));
     document.querySelectorAll("#startLevel button, #startFree").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.level) === pickLevel)));
     document.querySelectorAll("#startControl button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.control === pickControl)));
-    $("lvDesc").textContent = t("lv" + pickLevel);
+    // 프리 모드(1)는 방해 블록이 없어서 점수 램프도 없다
+    $("lvDesc").textContent = t("lv" + pickLevel) + (pickLevel > 1 ? " · " + t("lv_ramp") : "");
     const st = store.get(slotKeyFor(pickMode, pickLevel));
     $("startBest").textContent = (st && st.best) || 0;
     $("startResume").hidden = !inProgress(st);
@@ -2225,6 +2235,14 @@
   // 등급 없이 맨 줄로 나온다 — 실제로 한 사람만 테두리가 생겼다. 정식 출시하고 나면
   // 다음 달부터는 늘 지난달 기준이다(이 상수를 지우거나 지난 달로 두면 된다).
   const TESTER_SEASON = "2026-10";
+  // 등급을 어느 시즌 순위로 매기는가. 테스터 달만 이번 달, 그 뒤로는 늘 지난 달.
+  const tierBasis = () => {
+    if (!window.Board) return null;
+    const now = Board.seasonNow();
+    if (now === TESTER_SEASON) return now;
+    const all = Board.seasons();
+    return all.length >= 2 ? all[all.length - 2] : null;
+  };
   let rankTiers = { byUid: {}, byRow: {} };   // byUid=재질 권한, byRow=순위표 줄 색
   // 순위표에서 등급을 보여 주는 자리. 줄 박스 전체가 그 재질이 된다 — 멀리서도 "쟤 홀로그램이네" 가 보인다.
   // 순위표에 오른 사람은 모두 테두리를 갖는다. 지난달 성적이 없으면 가장 아래 등급(동)부터 시작 —
@@ -2240,10 +2258,7 @@
     Board.myTitles().then((mt) => {
       Themes.setOwned({ owned: mt.owned, all: mt.all });
     }).catch(() => {});
-    const all = Board.seasons();
-    const now = Board.seasonNow();
-    const prev = all.length >= 2 ? all[all.length - 2] : null;
-    const basis = now === TESTER_SEASON ? now : prev;   // 테스터 달만 이번 달 순위로
+    const basis = tierBasis();
     if (!basis) return;
     Board.top(2000, basis).then((rows) => {
       rankTiers = Board.tiers(rows);
