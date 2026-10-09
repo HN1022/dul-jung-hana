@@ -20,10 +20,14 @@ ANDROID_RES = os.path.join(ROOT, "android", "app", "src", "main", "res")
 
 # ---- 색 (게임 CSS와 같은 값) ----
 BG = (0x0F, 0x15, 0x1B)          # --bg (어두운 테마 배경)
+BG2 = None                       # 넣으면 BG → BG2 로 비스듬히 번지는 배경이 된다 (None 이면 단색)
 CARD_FRONT = (0x21, 0x2C, 0x38)  # 고르는 쪽 카드 — --panel 보다 살짝 밝게
 CARD_BACK = (0x1E, 0x28, 0x33)   # --panel 보다 살짝 밝게 — 작게 줄여도 카드가 두 장으로 보이게
-BLOCK_FRONT = (0xF2, 0xB6, 0x40)  # --c4, 화면에 나오는 그 노란 블록
-BLOCK_BACK = (0x4E, 0x5D, 0x6E)   # 뒤쪽 카드 블록 — 눈에 덜 띄게
+# 두 블록 다 색을 준다. 예전에는 고른 쪽만 색이고 안 고른 쪽은 회색이었는데, 그러면 "이미 골랐다"로
+# 보인다. 둘 다 살아 있어야 "둘 중 하나를 고르는 중"이 된다 — 이름이 「블록 딜레마」다.
+# 민트와 핑크는 보색에 가까워서 48dp 로 줄여도 두 덩어리가 안 섞인다. 더 밝은 민트를 앞 카드에 둔다.
+BLOCK_FRONT = (0x00, 0xF5, 0xD4)  # 형광 민트 — 고르는 쪽(앞)
+BLOCK_BACK = (0xFF, 0x3D, 0x9A)   # 형광 핑크 — 안 고른 쪽(뒤)
 
 SS = 4            # 슈퍼샘플링 배율 (계단현상 제거용)
 CELL_GAP = 0.13   # 칸 사이 간격 (칸 크기 대비)
@@ -50,10 +54,11 @@ class Canvas:
         self.w, self.h = w, h
         self.px = bytearray(w * h * 4)  # RGBA, 투명으로 시작
 
-    def rrect(self, cx, cy, w, h, r, color, angle=0.0, shade=False):
+    def rrect(self, cx, cy, w, h, r, color, angle=0.0, shade=False, grad=None):
         """가운데가 (cx, cy)인 둥근 사각형. angle 만큼 기울여 그린다.
 
         shade=True면 위는 밝게 아래는 어둡게 — 게임 블록의 입체감과 같은 처리.
+        grad 를 주면 color → grad 로 왼쪽 위에서 오른쪽 아래로 번진다(배경용).
         """
         ca, sa = math.cos(angle), math.sin(angle)
         ex = (abs(w * ca) + abs(h * sa)) / 2
@@ -72,6 +77,8 @@ class Canvas:
                 if (lx - qx) ** 2 + (ly - qy) ** 2 > r * r:
                     continue
                 c = color
+                if grad is not None:
+                    c = blend(color, grad, min(1.0, max(0.0, ((lx + hw) / w + (ly + hh) / h) / 2)))
                 if shade:
                     t = (ly + hh) / h
                     if t < 0.18:
@@ -122,7 +129,11 @@ def write_png(path, w, h, rgba):
 
 
 def draw_card(cv, cx, cy, w, h, angle, card_color, cells, block_color):
-    """카드 한 장 + 그 안의 블록."""
+    """카드 한 장 + 그 안의 블록.
+
+    block_color 는 색 하나(RGB 셋값)이거나, 칸마다 다른 색을 쓰려면 색 목록이다.
+    """
+    many = isinstance(block_color[0], (tuple, list))
     cv.rrect(cx, cy, w, h, w * (CARD_R / CARD_W), card_color, angle)
 
     cols = max(x for x, _ in cells) + 1
@@ -136,8 +147,9 @@ def draw_card(cv, cx, cy, w, h, angle, card_color, cells, block_color):
         # 카드 기준 좌표 → 화면 좌표
         lx = -pw / 2 + cell / 2 + gx * (cell + gap)
         ly = -ph / 2 + cell / 2 + gy * (cell + gap)
+        col = block_color[cells.index((gx, gy)) % len(block_color)] if many else block_color
         cv.rrect(cx + lx * ca - ly * sa, cy + lx * sa + ly * ca,
-                 cell, cell, cell * CELL_R, block_color, angle, shade=True)
+                 cell, cell, cell * CELL_R, col, angle, shade=True)
 
 
 def make(width, height, radius_frac, content_frac, bg=True):
@@ -149,7 +161,7 @@ def make(width, height, radius_frac, content_frac, bg=True):
     cv = Canvas(w, h)
     short = min(w, h)
     if bg:
-        cv.rrect(w / 2, h / 2, w, h, short * radius_frac, BG)
+        cv.rrect(w / 2, h / 2, w, h, short * radius_frac, BG, grad=BG2)
 
     s = short * content_frac / 0.82    # 0.82 = 기본 아이콘 기준
     mx, my = w / 2, h / 2

@@ -27,3 +27,4 @@ www/
 # 팔레트 미리보기는 만들어서 보는 것 — 저장소에 두지 않는다
 tools/palette-preview.html
 tools/material-preview.html
+tools/icon-preview.html
