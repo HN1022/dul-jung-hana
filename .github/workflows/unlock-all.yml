@@ -3,7 +3,10 @@
 # GitHub 저장소 → Actions → "개발자 전체 해금" → Run workflow
 #   name: 해금할 사람의 닉네임 (구글 연동으로 선점한 닉네임이어야 찾을 수 있다)
 #   uid:  닉네임으로 못 찾을 때 uid 를 직접. name 보다 우선한다
-#   off:  켜면 해금을 거둔다
+#   revoke: 켜면 해금을 거둔다
+#
+# ⚠️ 입력 이름을 off 로 두면 안 된다 — YAML 이 off 를 불리언 false 로 읽어서
+#    입력 키가 inputs[false] 가 되고 inputs.off 가 비어 버린다 (2026-10-09 에 겪음).
 #
 # 받은 사람은 titles/{uid}.all = true 가 되어 모든 테마와 재질을 쓸 수 있다.
 # 화면 코드에 "내 uid 면 특별 취급" 같은 건 없다 — 데이터로만 준다.
@@ -18,7 +21,7 @@ on:
       uid:
         description: "(고급) uid 를 직접 넣기 — 닉네임보다 우선"
         required: false
-      off:
+      revoke:
         description: "해금 거두기"
         type: boolean
         default: false
@@ -53,7 +56,7 @@ jobs:
         env:
           NAME: ${{ inputs.name }}
           UID: ${{ inputs.uid }}
-          OFF: ${{ inputs.off && '1' || '0' }}
+          OFF: ${{ inputs.revoke && '1' || '0' }}
         run: |
           set -o pipefail
           node tools/unlock-all.mjs 2> err.txt | tee out.txt || { echo "::error::해금 실패: $(tr '\n' ' ' < err.txt | cut -c1-3000)"; exit 1; }
