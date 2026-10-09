@@ -1,0 +1,54 @@
+# 닉네임 선점 놓아주기 — 손으로 돌린다
+#
+# GitHub 저장소 → Actions → "닉네임 선점 놓아주기" → Run workflow
+#   name:    놓아줄 닉네임
+#   dry_run: 켜면 주인만 보여 주고 지우지 않는다 → 먼저 이걸로 확인
+#
+# ⚠️ 입력 이름에 off / on / yes / no 를 쓰지 말 것 — YAML 이 불리언으로 읽어서 키가 깨진다.
+name: 닉네임 선점 놓아주기
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "놓아줄 닉네임"
+        required: true
+      dry_run:
+        description: "주인만 보기 (지우지 않음)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: firebase
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 구글 클라우드 로그인 (키 없는 연동)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/204724489972/locations/global/workloadIdentityPools/github/providers/github-actions
+          service_account: github-actions@either-or-130af.iam.gserviceaccount.com
+      - name: 도구 설치
+        run: |
+          mkdir -p /tmp/fb && cd /tmp/fb && npm init -y > /dev/null
+          npm install --no-audit --no-fund @google-cloud/firestore@7 google-auth-library@9
+          ln -s /tmp/fb/node_modules "$GITHUB_WORKSPACE/node_modules"
+      - name: 놓아주기
+        env:
+          NAME: ${{ inputs.name }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: |
+          set -o pipefail
+          node tools/release-name.mjs 2> err.txt | tee out.txt || { echo "::error::놓아주기 실패: $(tr '\n' ' ' < err.txt | cut -c1-3000)"; exit 1; }
+          { echo '```'; cat out.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
