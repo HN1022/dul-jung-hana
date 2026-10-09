@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v53";   // v53: 점수 5000마다 방해 블록 +1, 순위 등급 즉시 갱신
+const VERSION = "v53";   // v53: 점수 램프(완만하게), 순위 등급 즉시 갱신
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [

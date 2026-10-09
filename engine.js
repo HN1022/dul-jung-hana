@@ -39,16 +39,31 @@
     4: { every: 2, count: 2, mult: 3 },
   };
 
-  // 점수가 오를수록 방해 블록이 한 칸씩 늘어난다 (v4 부터).
+  // 점수가 오를수록 방해 블록이 "가끔 한 칸 더" 떨어진다 (v4 부터).
   // 작은 블록만 고르며 버티면 판이 끝나지 않는다는 이야기가 있었다(2026-10-09). 난이도를 올리는
-  // 게 아니라 **같은 난이도 안에서 판이 길어질수록** 조여 오게 하는 것이다.
-  //   5000점마다 한 단계, 최대 4단계. 한 번에 떨어지는 칸 수가 단계만큼 늘어난다.
-  //   예) 난이도 3(2턴마다 2칸)은 5000점부터 3칸, 10000점부터 4칸 … 20000점부터 6칸.
+  // 게 아니라 **같은 난이도 안에서 판이 길어질수록** 조금씩 조여 오게 하는 것이다.
+  //
+  // 한 단계 올라갈 때마다 칸을 통째로 더 주면 너무 가파르다(처음엔 그렇게 만들었다가 되돌렸다).
+  // 그래서 "몇 번에 한 번 더 주느냐"로 센다. 5000점마다 한 단계씩 아래 표를 따라간다.
+  //   5000점 → 9번에 한 번 +1칸,  10000 → 6번에 한 번,  15000 → 3번에 한 번,
+  //   20000 → 2번에 한 번,  25000 → 3번에 두 번,  30000 → 매번 +1칸,
+  //   35000 → 매번 +1 에 3번에 한 번 더,  40000 → 매번 +1 에 2번에 한 번 더,
+  //   45000 이상 → 매번 +2칸 (상한)
+  // 난이도 3(2턴마다 2칸)이면 30000점에서 3칸, 45000점에서 4칸이 된다.
   // 프리 모드는 그대로다(방해 블록 자체가 없다).
   const RAMP_EVERY = 5000;
-  const RAMP_MAX = 4;
+  // [분자, 분모] = 방해 블록이 떨어질 때마다 평균 몇 칸을 더 주는가
+  const RAMP = [[0, 1], [1, 9], [1, 6], [1, 3], [1, 2], [2, 3], [1, 1], [4, 3], [3, 2], [2, 1]];
+  const RAMP_MAX = RAMP.length - 1;
   const rampStep = (st) =>
     (st.v >= 4 ? Math.min(RAMP_MAX, Math.floor((st.score || 0) / RAMP_EVERY)) : 0);
+  // 몇 번째 투하인지로 더 줄 칸을 고르게 흩뿌린다. 무작위가 아니라 세는 것이라 리플레이가 맞는다.
+  // (st.drops 는 기록에 안 남겨도 된다 — 투하 횟수는 행동 기록에서 그대로 다시 세어진다.)
+  function rampBonus(st) {
+    const [n, d] = RAMP[rampStep(st)];
+    const k = st.drops || 0;
+    return Math.floor(((k + 1) * n) / d) - Math.floor((k * n) / d);
+  }
 
   // ---- 무작위 (seed 고정) ----
   // mulberry32. 상태는 st.rng(32비트 정수) 하나라서 저장·복원이 쉽다.
@@ -225,6 +240,7 @@
       v: SUPPORTED.indexOf(opts.v) >= 0 ? opts.v : VERSION, mode, level, seed, rng: seed | 0,
       revives: 0,
       slots, slots0: slots,   // slots0 = 시작할 때 보관 칸 수(리플레이의 시작 조건)
+      drops: 0,               // 방해 블록을 몇 번 떨어뜨렸나 (점수 램프가 쓴다)
       board: Array(N * N).fill(0),
       score: 0, streak: 0, turn: 0, turnsLeft: LEVELS[level].every,
       phase: "size", sizes: [], shapes: [], held: [], log: [],
@@ -434,7 +450,8 @@
     if (st.turnsLeft > 0) return [];
     st.turnsLeft = L.every;
     const added = [];
-    const count = L.count + rampStep(st);   // 점수가 오를수록 더 떨어진다
+    const count = L.count + rampBonus(st);   // 점수가 오를수록 가끔 한 칸 더
+    st.drops = (st.drops || 0) + 1;
     for (let k = 0; k < count; k++) {
       // 빈칸이 2개 이상인 줄에만 → 방해 블록이 혼자 줄을 완성하지 않는다
       const options = [];
@@ -493,7 +510,7 @@
   const maxScore = (level, turns) => Math.ceil(LEVELS[level].mult * (32 * turns + 360 * turns * (turns + 1) / 2));
 
   const Engine = {
-    VERSION, SUPPORTED, N, MODES, LEVELS, GROWTH_TURNS, REVIVE_MAX_CELLS, RAMP_EVERY, RAMP_MAX, rampStep,
+    VERSION, SUPPORTED, N, MODES, LEVELS, GROWTH_TURNS, REVIVE_MAX_CELLS, RAMP_EVERY, RAMP_MAX, RAMP, rampStep, rampBonus,
     REVIVE_ROWS_MIN, REVIVE_ROWS_MAX,
     create, chooseSize, place, store, setSlots, rotateItem, replay, revive, canRevive,
     items, isStuck, fits, anyFit, fitsAnyRotation, fullRows,
