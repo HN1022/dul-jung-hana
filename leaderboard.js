@@ -306,7 +306,7 @@
       body: JSON.stringify({
         structuredQuery: {
           from: [{ collectionId: "scores" }],
-          select: { fields: ["uid", "name", "score", "mode", "level", "status"].map((fieldPath) => ({ fieldPath })) },
+          select: { fields: ["uid", "name", "score", "mode", "level", "status", "at"].map((fieldPath) => ({ fieldPath })) },
           where: { fieldFilter: { field: { fieldPath: "season" }, op: "EQUAL", value: { stringValue: season } } },
           limit: 2000,
         },
@@ -327,18 +327,31 @@
         owners[nameKey(x.document.fields.name.stringValue)] = x.document.fields.uid.stringValue;
       });
     } catch (e) {}
-    return rows.filter((x) => x.document).map((x) => {
+    const out = rows.filter((x) => x.document).map((x) => {
       const f = x.document.fields || {};
       const uid = val(f.uid), name = val(f.name);
       const tt = titles[uid];
       return {
-        uid, name, score: val(f.score) || 0,
+        uid, name, at: val(f.at) || "", score: val(f.score) || 0,
         mode: val(f.mode), level: val(f.level), verified: val(f.status) === "ok",
-        owned: !!name && owners[nameKey(name)] === uid,
         title: tt && tt.pick >= 0 ? tt.list[tt.pick] || null : null,
         titles: tt ? (tt.priv ? { priv: true, list: [], pick: -1 } : tt) : null,
       };
-    }).sort((a, b) => b.score - a.score).slice(0, limit);
+    });
+    // 기록에는 올릴 당시의 닉네임이 박혀 있다. 그래서 이름을 바꾼 사람은 순위표에 옛 이름과
+    // 새 이름으로 따로 보인다 — 같은 사람인데 두 사람처럼 보였다(2026-10-09).
+    // 가장 최근에 올린 기록의 이름으로 그 사람의 모든 줄을 맞춘다.
+    const latest = {};
+    for (const r of out) {
+      if (!r.uid) continue;
+      const cur = latest[r.uid];
+      if (!cur || r.at > cur.at) latest[r.uid] = r;
+    }
+    for (const r of out) {
+      if (r.uid && latest[r.uid]) r.name = latest[r.uid].name;
+      r.owned = !!r.name && owners[nameKey(r.name)] === r.uid;   // 이름을 맞춘 뒤에 선점 여부를 본다
+    }
+    return out.sort((a, b) => b.score - a.score).slice(0, limit);
   }
 
   // ---- 칭호와 테마 소유 ----

@@ -846,7 +846,7 @@
 <script src="i18n.js?v=33"></script>
 <script src="money.js?v=21"></script>
 <script src="engine.js?v=15"></script>
-<script src="leaderboard.js?v=19"></script>
+<script src="leaderboard.js?v=20"></script>
 <script>
 (() => {
   const N = 8;
@@ -1694,7 +1694,13 @@
     if (rankRows === null) { list.innerHTML = `<li class="msg">${t("rank_loading")}</li>`; return; }
     if (rankRows === "offline") { list.innerHTML = `<li class="msg">${t("rank_offline")}</li>`; return; }
     const me = Board.myUid();
-    const rows = rankRows.filter((r) => rankTab === "all" || r.mode === rankTab).slice(0, 100);
+    // 한 사람이 여러 판에 기록을 올리면 줄도 여러 개가 된다. 순위표는 "사람 순위"로 읽히니
+    // 사람마다 가장 높은 기록 한 줄만 남긴다(rankRows 는 점수 내림차순이라 먼저 만난 것이 최고 기록).
+    const seen = new Set();
+    const rows = rankRows
+      .filter((r) => rankTab === "all" || r.mode === rankTab)
+      .filter((r) => { if (!r.uid) return true; if (seen.has(r.uid)) return false; seen.add(r.uid); return true; })
+      .slice(0, 100);
     if (!rows.length) { list.innerHTML = `<li class="msg">${t("rank_empty")}</li>`; return; }
     list.innerHTML = rows.map((r, i) => `
       <li class="${[r.uid && r.uid === me ? "me" : "", matClass(r.uid)].filter(Boolean).join(" ")}">

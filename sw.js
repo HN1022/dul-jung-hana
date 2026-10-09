@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v48";   // v48: 테스터 달은 이번 달 순위로 등급
+const VERSION = "v49";   // v49: 순위표를 사람 단위로 합치고 최근 닉네임으로
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
