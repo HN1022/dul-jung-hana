@@ -846,7 +846,7 @@
 <script src="i18n.js?v=33"></script>
 <script src="money.js?v=21"></script>
 <script src="engine.js?v=15"></script>
-<script src="leaderboard.js?v=20"></script>
+<script src="leaderboard.js?v=21"></script>
 <script>
 (() => {
   const N = 8;
@@ -1703,7 +1703,7 @@
       .slice(0, 100);
     if (!rows.length) { list.innerHTML = `<li class="msg">${t("rank_empty")}</li>`; return; }
     list.innerHTML = rows.map((r, i) => `
-      <li class="${[r.uid && r.uid === me ? "me" : "", matClass(r.uid)].filter(Boolean).join(" ")}">
+      <li class="${[r.uid && r.uid === me ? "me" : "", matClass(r)].filter(Boolean).join(" ")}">
         <span class="rk">${i + 1}</span>
         <span class="nm"><button type="button" class="nmbtn" data-prof="${i}">${esc(r.name)}${r.owned ? `<span class="own" title="${esc(t("rank_owned"))}">🛡</span>` : ""}${r.verified ? `<em title="${esc(t("rank_verified"))}">✓</em>` : ""}${r.title ? `<span class="ttl">🏅 ${esc(titleText(r.title))}</span>` : ""}</button></span>
         <span class="md">${esc(modeName(r.mode))}·${esc(Number(r.level) === 1 ? t("free_short") : "Lv" + lvLabel(r.level))}</span>
@@ -2200,12 +2200,16 @@
   // 등급 없이 맨 줄로 나온다 — 실제로 한 사람만 테두리가 생겼다. 정식 출시하고 나면
   // 다음 달부터는 늘 지난달 기준이다(이 상수를 지우거나 지난 달로 두면 된다).
   const TESTER_SEASON = "2026-10";
-  let rankTiers = {};          // { uid: 등급 } — 순위표 이름에도 쓴다
+  let rankTiers = { byUid: {}, byRow: {} };   // byUid=재질 권한, byRow=순위표 줄 색
   // 순위표에서 등급을 보여 주는 자리. 줄 박스 전체가 그 재질이 된다 — 멀리서도 "쟤 홀로그램이네" 가 보인다.
   // 순위표에 오른 사람은 모두 테두리를 갖는다. 지난달 성적이 없으면 가장 아래 등급(동)부터 시작 —
   // 한 사람만 테두리가 있으면 빠진 것처럼 보인다.
   // 등급을 받은 사람만 줄 박스가 생긴다. 보상 인원(상위 100등) 밖은 평범한 줄이다.
-  const matClass = (uid) => (uid && rankTiers[uid] ? "mt " + rankTiers[uid] : "");
+  // 줄 색은 **그 기록이 속한 판**에서의 등급이다. 그래야 한 판 안에서 홀로·금·은·동 비율이 맞는다.
+  const matClass = (r) => {
+    const k = r && r.uid && rankTiers.byRow[`${r.uid}_${r.mode}_${r.level}`];
+    return k ? "mt " + k : "";
+  };
   function loadUnlocks() {
     if (!window.Board || !window.Themes) return;
     Board.myTitles().then((mt) => {
@@ -2218,7 +2222,7 @@
     if (!basis) return;
     Board.top(2000, basis).then((rows) => {
       rankTiers = Board.tiers(rows);
-      Themes.setTier(rankTiers[Board.myUid()] || null);
+      Themes.setTier(rankTiers.byUid[Board.myUid()] || null);
     }).catch(() => {});
   }
 

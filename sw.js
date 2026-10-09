@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v50";   // v50: 아이콘 블록을 민트·핑크로
+const VERSION = "v51";   // v51: 줄 색을 그 판의 등수로, 개발자 해금·비공개가 안 먹던 것
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [

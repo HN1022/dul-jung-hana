@@ -292,6 +292,9 @@
   const val = (f) => {
     if (!f) return null;
     if ("stringValue" in f) return f.stringValue;
+    // ⚠️ 참/거짓을 빼먹었었다. titles 의 all(개발자 해금)·priv(프로필 비공개) 가 늘 false 로
+    //    읽혀서 둘 다 동작하지 않았다(2026-10-09 발견).
+    if ("booleanValue" in f) return f.booleanValue;
     if ("integerValue" in f) return Number(f.integerValue);
     if ("doubleValue" in f) return Number(f.doubleValue);
     if ("timestampValue" in f) return f.timestampValue;
@@ -427,11 +430,15 @@
   // 보상을 받는 인원. 테스트처럼 사람이 적으면(12명) 전원이 받고, 사람이 늘면 상위 100등까지만 받는다
   // — 1만 명이면 상위 1% 다. 비율은 그 100명 안에서 위와 같이 나눈다.
   const TIER_POOL = 100;
-  // rows = top() 이 준 줄들. { uid: 등급id } 를 돌려준다.
+  // rows = top() 이 준 줄들. 두 가지를 돌려준다.
+  //   byUid: { uid: 등급id }        — 그 사람이 받은 가장 높은 등급. 재질(블록 꾸미기) 권한에 쓴다.
+  //   byRow: { uid_모드_난이도: 등급id } — 그 기록이 속한 판에서의 등급. 순위표 줄 색에 쓴다.
+  // 둘을 나눈 이유: 혼자 있는 판에서 1등이면 홀로그램을 받는데, 그걸 줄 색에까지 쓰면
+  // 사람 많은 판에서 4등인 사람이 그 판의 금 자리를 먹어 버려 금이 아예 안 보였다(2026-10-09).
   function tiers(rows) {
     const boards = {};
     (rows || []).forEach((d) => { (boards[`${d.mode}_${d.level}`] ||= []).push(d); });
-    const best = {};
+    const best = {}, row = {};
     Object.values(boards).forEach((list) => {
       const n = list.length;
       // "상위 30%"는 1등부터 ceil(0.30 × 인원)등까지라는 뜻이다. 올림이라 사람이 적어도 1등은 늘 최고 등급.
@@ -444,11 +451,12 @@
         const k = cut.findIndex((c) => rank <= c);
         const tier = k < 0 ? TIERS.length - 1 : k;
         if (best[d.uid] === undefined || tier < best[d.uid]) best[d.uid] = tier;   // 작을수록 좋은 등급
+        row[`${d.uid}_${d.mode}_${d.level}`] = TIERS[tier].id;
       });
     });
     const out = {};
     Object.entries(best).forEach(([uid, k]) => { out[uid] = TIERS[k].id; });
-    return out;
+    return { byUid: out, byRow: row };
   }
 
   // 인터넷이 다시 연결되면 밀린 기록을 보낸다
