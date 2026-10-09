@@ -98,7 +98,13 @@
     max-width: 520px;
     margin: 0 auto;
     box-sizing: border-box;
-    min-height: 100dvh;
+    /* ⚠️ dvh 가 아니라 svh 다. dvh 는 "지금 보이는" 높이라서, 아이폰 인앱 브라우저(카카오 등)에서
+       스크롤할 때 주소창이 접혔다 펴질 때마다 값이 바뀐다 — 그때마다 보드 크기가 춤췄다
+       (2026-10-09 동생 아이폰에서 확인). svh 는 주소창이 **보이는** 상태 기준으로 고정이라 안 변한다.
+       주소창이 접히면 아래에 여백이 조금 생기는데, 크기가 흔들리는 것보다 낫다.
+       아래 100vh 는 svh 를 모르는 옛 브라우저용 예비값이다. 순서를 바꾸지 말 것. */
+    min-height: 100vh;
+    min-height: 100svh;
     padding-inline: 16px;
     padding-top: calc(var(--top-gap) + 20px);
     padding-bottom: calc(var(--bottom-gap) + 24px);
@@ -219,7 +225,7 @@
     position: relative;
     /* 보드가 먼저다. 긴 폰에서 하단 광고까지 들어가면 남는 높이를 트레이가 다 먹어서
        보드만 작아졌다(378 → 311px). 그래서 칸 높이를 줄이고 보드에 양보한다. */
-    min-height: clamp(88px, 13dvh, 118px);
+    min-height: clamp(88px, 13svh, 118px);
     border-radius: 14px;
     background: var(--panel);
     display: grid; place-items: center;
@@ -605,7 +611,7 @@
   .holdbar { display: grid; grid-template-columns: repeat(var(--slots, 3), 1fr); gap: 6px 12px; align-items: stretch; }
   .holdlabel { grid-column: 1 / -1; display: flex; align-items: center; font-size: 13px; font-weight: 700; color: var(--muted); white-space: nowrap; }
   .holdslot {
-    position: relative; min-height: clamp(46px, 7dvh, 56px); border-radius: 12px; padding: 5px; border: 0;
+    position: relative; min-height: clamp(46px, 7svh, 56px); border-radius: 12px; padding: 5px; border: 0;
     background: var(--panel); display: grid; place-items: center; color: inherit;
     transition: box-shadow 120ms ease;
   }

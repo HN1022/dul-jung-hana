@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v55";   // v55: 점수 램프 — 시작 3번에 한 번, 상한 3 4 3 4
+const VERSION = "v56";   // v56: 아이폰 인앱 브라우저에서 보드 크기가 흔들리던 것 (dvh → svh)
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
