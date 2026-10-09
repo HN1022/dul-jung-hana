@@ -49,7 +49,10 @@
   function setAdHeight(px) {
     const n = Math.round(px || 0);
     const h = n > 0 ? Math.max(n, AD_H_MIN) + AD_H_PAD : 0;
-    document.documentElement.style.setProperty("--ad-h", h + "px");
+    const root = document.documentElement.style;
+    root.setProperty("--ad-h", h + "px");
+    // 광고가 떠 있을 때만 아래 안전영역까지 띠로 덮는다(index.html 의 .adslot)
+    root.setProperty("--ad-on", h > 0 ? "1" : "0");
   }
 
   async function startAds() {

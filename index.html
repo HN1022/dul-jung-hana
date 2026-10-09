@@ -335,38 +335,47 @@
   /* ---- 재질 (등수 보상) ----
      지난달 순위로 정해지는 보상. 블록 **색 자체**가 금·은·동·홀로그램이 된다(순위표 줄 박스와 같은 결).
      한 번에 세 개까지만. 나머지 세 크기는 테마 색 그대로라 크기 구분이 남는다.
-     themes.js 가 :root 에 data-mat{크기}="재질" 을 붙였다 뗀다 — DOM 은 안 건드린다. */
-  :root[data-mat1="holo"] { --matbg1: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
-  :root[data-mat1="gold"] { --matbg1: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
-  :root[data-mat1="silver"] { --matbg1: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
-  :root[data-mat1="bronze"] { --matbg1: linear-gradient(150deg, #E8B98F, #B5703A 35%, #7E4518 60%, #D9A271); }
-  :root[data-mat2="holo"] { --matbg2: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
-  :root[data-mat2="gold"] { --matbg2: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
-  :root[data-mat2="silver"] { --matbg2: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
-  :root[data-mat2="bronze"] { --matbg2: linear-gradient(150deg, #E8B98F, #B5703A 35%, #7E4518 60%, #D9A271); }
-  :root[data-mat3="holo"] { --matbg3: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
-  :root[data-mat3="gold"] { --matbg3: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
-  :root[data-mat3="silver"] { --matbg3: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
-  :root[data-mat3="bronze"] { --matbg3: linear-gradient(150deg, #E8B98F, #B5703A 35%, #7E4518 60%, #D9A271); }
-  :root[data-mat4="holo"] { --matbg4: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
-  :root[data-mat4="gold"] { --matbg4: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
-  :root[data-mat4="silver"] { --matbg4: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
-  :root[data-mat4="bronze"] { --matbg4: linear-gradient(150deg, #E8B98F, #B5703A 35%, #7E4518 60%, #D9A271); }
-  :root[data-mat5="holo"] { --matbg5: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
-  :root[data-mat5="gold"] { --matbg5: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
-  :root[data-mat5="silver"] { --matbg5: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
-  :root[data-mat5="bronze"] { --matbg5: linear-gradient(150deg, #E8B98F, #B5703A 35%, #7E4518 60%, #D9A271); }
-  :root[data-mat6="holo"] { --matbg6: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
-  :root[data-mat6="gold"] { --matbg6: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
-  :root[data-mat6="silver"] { --matbg6: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
-  :root[data-mat6="bronze"] { --matbg6: linear-gradient(150deg, #E8B98F, #B5703A 35%, #7E4518 60%, #D9A271); }
+     themes.js 가 :root 에 data-mat{크기}="재질" 을 붙였다 뗀다 — DOM 은 안 건드린다.
 
-  :root[data-mat1="tester"] { --matbg1: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
-  :root[data-mat2="tester"] { --matbg2: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
-  :root[data-mat3="tester"] { --matbg3: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
-  :root[data-mat4="tester"] { --matbg4: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
-  :root[data-mat5="tester"] { --matbg5: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
-  :root[data-mat6="tester"] { --matbg6: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
+     ⚠️ 재질 색은 여기 --mat-* 한 곳에만 적는다. 블록·테마 화면 견본이 전부 이걸 가져다 쓴다.
+        예전에는 견본이 따로 색을 들고 있어서 실제 블록과 달라 보였다(2026-10-09 사용자 발견). */
+  :root {
+    --mat-holo: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB);
+    --mat-gold: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8);
+    --mat-silver: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA);
+    --mat-bronze: linear-gradient(150deg, #E8B98F, #B5703A 35%, #7E4518 60%, #D9A271);
+    --mat-tester: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF);
+  }
+  :root[data-mat1="holo"] { --matbg1: var(--mat-holo); }
+  :root[data-mat1="gold"] { --matbg1: var(--mat-gold); }
+  :root[data-mat1="silver"] { --matbg1: var(--mat-silver); }
+  :root[data-mat1="bronze"] { --matbg1: var(--mat-bronze); }
+  :root[data-mat1="tester"] { --matbg1: var(--mat-tester); }
+  :root[data-mat2="holo"] { --matbg2: var(--mat-holo); }
+  :root[data-mat2="gold"] { --matbg2: var(--mat-gold); }
+  :root[data-mat2="silver"] { --matbg2: var(--mat-silver); }
+  :root[data-mat2="bronze"] { --matbg2: var(--mat-bronze); }
+  :root[data-mat2="tester"] { --matbg2: var(--mat-tester); }
+  :root[data-mat3="holo"] { --matbg3: var(--mat-holo); }
+  :root[data-mat3="gold"] { --matbg3: var(--mat-gold); }
+  :root[data-mat3="silver"] { --matbg3: var(--mat-silver); }
+  :root[data-mat3="bronze"] { --matbg3: var(--mat-bronze); }
+  :root[data-mat3="tester"] { --matbg3: var(--mat-tester); }
+  :root[data-mat4="holo"] { --matbg4: var(--mat-holo); }
+  :root[data-mat4="gold"] { --matbg4: var(--mat-gold); }
+  :root[data-mat4="silver"] { --matbg4: var(--mat-silver); }
+  :root[data-mat4="bronze"] { --matbg4: var(--mat-bronze); }
+  :root[data-mat4="tester"] { --matbg4: var(--mat-tester); }
+  :root[data-mat5="holo"] { --matbg5: var(--mat-holo); }
+  :root[data-mat5="gold"] { --matbg5: var(--mat-gold); }
+  :root[data-mat5="silver"] { --matbg5: var(--mat-silver); }
+  :root[data-mat5="bronze"] { --matbg5: var(--mat-bronze); }
+  :root[data-mat5="tester"] { --matbg5: var(--mat-tester); }
+  :root[data-mat6="holo"] { --matbg6: var(--mat-holo); }
+  :root[data-mat6="gold"] { --matbg6: var(--mat-gold); }
+  :root[data-mat6="silver"] { --matbg6: var(--mat-silver); }
+  :root[data-mat6="bronze"] { --matbg6: var(--mat-bronze); }
+  :root[data-mat6="tester"] { --matbg6: var(--mat-tester); }
   .cell[data-c="1"], .blk.c1 { background-image: var(--matbg1, none); }
   .cell[data-c="2"], .blk.c2 { background-image: var(--matbg2, none); }
   .cell[data-c="3"], .blk.c3 { background-image: var(--matbg3, none); }
@@ -417,13 +426,13 @@
   .ranklist li.mt .nm .ttl { color: #5A3C00; }
   .ranklist li.mt .nm .own { color: #1B3C8C; }
   .ranklist li.mt.me { box-shadow: inset 0 0 0 2px #241A06; }
-  .ranklist li.mt.holo { background-image: linear-gradient(100deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
-  .ranklist li.mt.gold { background-image: linear-gradient(100deg, #FFF8C8, #F0C93F, #FFFBDC, #D9A714); }
-  .ranklist li.mt.silver { background-image: linear-gradient(100deg, #FFFFFF, #C7D3DC, #F4F8FA, #A6B4BF); }
+  .ranklist li.mt.holo { background-image: var(--mat-holo); }
+  .ranklist li.mt.gold { background-image: var(--mat-gold); }
+  .ranklist li.mt.silver { background-image: var(--mat-silver); }
   /* 동은 어둡게 간다. 연한 황갈색으로 뒀더니 금과 밝기까지 비슷해서 순위표가 온통 금색으로 보였다
      (게다가 점수를 올린 사람은 전원 최소 동이라 네 등급이 다 같아 보였다).
      어두운 구리색이면 밝기부터 달라서 멀리서도 금과 구분된다 — 글자만 밝은 쪽으로 바꿔 준다. */
-  .ranklist li.mt.bronze { background-image: linear-gradient(100deg, #A86038, #7E401A, #9A5A33, #6B340F); }
+  .ranklist li.mt.bronze { background-image: var(--mat-bronze); }
   .ranklist li.mt.bronze { color: #FFEFE2; }
   .ranklist li.mt.bronze .rk, .ranklist li.mt.bronze .md { color: rgba(255, 239, 226, .70); }
   .ranklist li.mt.bronze .nm em { color: #7BF2C8; }
@@ -461,22 +470,28 @@
   .tprevside small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
   .tprevside .btn { margin-top: 8px; padding: 9px 12px; font-size: 14px; }
   .tprevside .btn[disabled] { opacity: .45; }
-  .matrow { display: flex; align-items: center; gap: 8px; background: var(--panel); border-radius: 12px; padding: 10px 12px; }
-  .matrow .mn { flex: 1; font-size: 14px; font-weight: 700; }
+  /* 견본·이름은 한 줄, 크기 버튼은 그 아래로 내린다. 한 줄에 다 넣었더니 좁은 폰에서
+     이름이 한 글자씩 세로로 쪼개졌다("홀 로 그 램"). */
+  .matrow { display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: center;
+            background: var(--panel); border-radius: 12px; padding: 10px 12px; }
+  .matrow .mn { font-size: 14px; font-weight: 700; white-space: nowrap; }
+  .matrow .matpick { grid-column: 1 / -1; }
   .matrow .chip.on { background: var(--accent); color: #06261D; }
   .matpick { display: flex; gap: 4px; flex-wrap: wrap; }
   .matpick button { border: 0; border-radius: 8px; padding: 4px 8px; font: inherit; font-size: 12px;
     background: var(--cell); color: var(--ink); cursor: pointer; }
   .matpick button.on { background: var(--accent); color: #06261D; font-weight: 800; }
   .matpick button[disabled] { opacity: .35; cursor: default; }
-  .matsample { width: 26px; height: 26px; border-radius: 6px; flex: none; position: relative; background: var(--c4); }
-  .matsample::after { background-repeat: no-repeat; }
-  .matsample::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
-  .matsample.tester::after { background-image: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
-  .matsample.holo::after { background-image: linear-gradient(115deg, rgba(255,0,128,.9), rgba(255,214,0,.9), rgba(0,255,170,.9), rgba(0,170,255,.9), rgba(170,0,255,.9)); mix-blend-mode: hard-light; opacity: .62; }
-  .matsample.gold::after { background-image: linear-gradient(150deg, #FFF3B0, #E8B23A 28%, #8C5A12 52%, #FFE07A 74%, #C8901F); mix-blend-mode: soft-light; }
-  .matsample.silver::after { background-image: linear-gradient(150deg, #FFFFFF, #C9D4DC 28%, #6A7884 52%, #F2F6F9 74%, #9AA7B2); mix-blend-mode: soft-light; }
-  .matsample.bronze::after { background-image: linear-gradient(150deg, #FFD9B0, #C87A3C 30%, #70401A 55%, #EFB37A 78%, #A05F28); mix-blend-mode: soft-light; }
+  /* 재질 견본 — 실제 블록과 같아야 한다. 위의 --mat-* 를 그대로 쓰고 블록과 같은 입체감을 준다. */
+  .matsample {
+    width: 26px; height: 26px; border-radius: 6px; flex: none; background: var(--c4);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18), inset 0 2px 0 rgba(255, 255, 255, 0.25);
+  }
+  .matsample.holo { background-image: var(--mat-holo); }
+  .matsample.gold { background-image: var(--mat-gold); }
+  .matsample.silver { background-image: var(--mat-silver); }
+  .matsample.bronze { background-image: var(--mat-bronze); }
+  .matsample.tester { background-image: var(--mat-tester); }
 
   /* 블록 도감 — 크기마다 나올 수 있는 모양 전부 */
   .dex { display: flex; flex-direction: column; gap: 18px; }
@@ -498,7 +513,12 @@
      광고가 없으면(웹·광고 실패) --ad-h 가 0 이라 높이도 0 이 되어 보이지 않는다. */
   .adslot {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; pointer-events: none;
-    height: var(--ad-h, 0px); background: var(--panel); overflow: hidden;
+    /* 배너가 화면 맨 아래가 아니라 제스처 바 위에 얹히는 기기가 있다. 띠가 그 아래까지 덮어야
+       틈으로 글이 비치지 않는다. 광고가 없으면 --ad-on 이 0 이라 높이도 0 이 된다. */
+    height: calc(var(--ad-h, 0px)
+                 + var(--ad-on, 0) * max(env(safe-area-inset-bottom, 0px),
+                                         var(--safe-area-inset-bottom, 0px)));
+    background: var(--panel); overflow: hidden;
   }
   /* 테두리 선도 띠 안에 둔다 — 높이가 0(광고 없음)이면 overflow:hidden 에 잘려서 안 보인다 */
   .adslot::before {
@@ -891,11 +911,15 @@
   let items = [], itemCards = [];
 
   // ---- Hold slots ----
-  // 누구나 2칸 무료 (2026-09-18 부터. 그 전 앱은 1칸 + 구독으로 2칸이었다 — 인앱 결제는 뺐음, money.js 참고)
-  const MAX_SLOTS = 2;
+  // 보관 칸은 1개다 (2026-10-09 부터. 그 전에는 2개였고, 더 전에는 1개 + 구독으로 2개였다 —
+  // 인앱 결제는 뺐음, money.js 참고). 엔진은 1 과 2 만 받는다(engine.js setSlots).
+  // 이미 2칸으로 진행 중이던 판은 그대로 2칸으로 끝낸다 — 중간에 줄이면 보관해 둔 블록이 사라진다.
+  const MAX_SLOTS = 1;
   const Money = window.Money;
   const slots = MAX_SLOTS;
-  const canStore = () => phase === "shape" && shapes.length > 0 && held.length < slots;
+  // 화면에 그릴 칸 수. 진행 중인 옛 판은 G.slots 가 2 일 수 있다.
+  const shownSlots = () => Math.max(MAX_SLOTS, (G && G.slots) || MAX_SLOTS);
+  const canStore = () => phase === "shape" && shapes.length > 0 && held.length < ((G && G.slots) || slots);
   function buildItems() {
     items = phase === "shape"
       ? [...shapes.map((p, i) => ({ p, from: "s", i })), ...held.map((p, i) => ({ p, from: "h", i }))]
@@ -1101,12 +1125,12 @@
 
   function renderHold() {
     holdBar.innerHTML = "";
-    holdBar.style.setProperty("--slots", MAX_SLOTS);
+    holdBar.style.setProperty("--slots", shownSlots());
     const label = document.createElement("span");
     label.className = "holdlabel";
     label.textContent = t("hold");
     holdBar.appendChild(label);
-    for (let k = 0; k < MAX_SLOTS; k++) {
+    for (let k = 0; k < shownSlots(); k++) {
       const p = held[k];
       const cell = document.createElement("div");
       cell.className = "holdslot";
@@ -1994,8 +2018,9 @@
     if ((g && E.SUPPORTED.includes(g.v) && Array.isArray(g.board) && g.board.length === N * N) || legacy) {
       if (g) {
         G = g;
-        // 1칸으로 시작한 옛 판(구독 없던 앱)도 이제 2칸 — 기록에 남겨 리플레이 검증이 맞게
-        if (G.slots !== MAX_SLOTS && G.phase !== "over") E.setSlots(G, MAX_SLOTS);
+        // 칸 수가 줄었어도 진행 중인 판은 건드리지 않는다 — 보관해 둔 블록이 사라진다.
+        // 늘어난 경우에만 맞춰 준다(기록에 남겨야 리플레이 검증이 맞다).
+        if (G.slots < MAX_SLOTS && G.phase !== "over") E.setSlots(G, MAX_SLOTS);
       } else {
         // 엔진 도입 전에 시작한 판: 행동 기록이 없어 리플레이 검증이 불가 → 이어서 하되 순위 등록만 막는다
         G = E.create({ mode, level, slots });
