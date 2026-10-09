@@ -2188,7 +2188,13 @@
   //
   // 재질 등급은 **지난달** 최종 순위로 정한다. 이번 달 순위로 하면 월초에 몇 명 없을 때
   // 전원이 홀로그램이 되고, 하루하루 등급이 오르내려서 보상처럼 느껴지지 않는다.
-  let rankTiers = {};          // 지난달 기준 { uid: 등급 } — 순위표 이름에도 쓴다
+  //
+  // 딱 한 달만 예외다. 비공개 테스트를 하는 이 달은 **이번 달** 순위로 준다.
+  // 지난달(2026-09)에 기록을 올린 사람이 거의 없어서, 지난달 기준으로 하면 테스터 대부분이
+  // 등급 없이 맨 줄로 나온다 — 실제로 한 사람만 테두리가 생겼다. 정식 출시하고 나면
+  // 다음 달부터는 늘 지난달 기준이다(이 상수를 지우거나 지난 달로 두면 된다).
+  const TESTER_SEASON = "2026-10";
+  let rankTiers = {};          // { uid: 등급 } — 순위표 이름에도 쓴다
   // 순위표에서 등급을 보여 주는 자리. 줄 박스 전체가 그 재질이 된다 — 멀리서도 "쟤 홀로그램이네" 가 보인다.
   // 순위표에 오른 사람은 모두 테두리를 갖는다. 지난달 성적이 없으면 가장 아래 등급(동)부터 시작 —
   // 한 사람만 테두리가 있으면 빠진 것처럼 보인다.
@@ -2200,9 +2206,11 @@
       Themes.setOwned({ owned: mt.owned, all: mt.all });
     }).catch(() => {});
     const all = Board.seasons();
+    const now = Board.seasonNow();
     const prev = all.length >= 2 ? all[all.length - 2] : null;
-    if (!prev) return;
-    Board.top(2000, prev).then((rows) => {
+    const basis = now === TESTER_SEASON ? now : prev;   // 테스터 달만 이번 달 순위로
+    if (!basis) return;
+    Board.top(2000, basis).then((rows) => {
       rankTiers = Board.tiers(rows);
       Themes.setTier(rankTiers[Board.myUid()] || null);
     }).catch(() => {});
