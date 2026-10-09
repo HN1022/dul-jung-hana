@@ -1,0 +1,60 @@
+# 개발자 전체 해금 — 손으로 돌린다
+#
+# GitHub 저장소 → Actions → "개발자 전체 해금" → Run workflow
+#   name: 해금할 사람의 닉네임 (구글 연동으로 선점한 닉네임이어야 찾을 수 있다)
+#   uid:  닉네임으로 못 찾을 때 uid 를 직접. name 보다 우선한다
+#   off:  켜면 해금을 거둔다
+#
+# 받은 사람은 titles/{uid}.all = true 가 되어 모든 테마와 재질을 쓸 수 있다.
+# 화면 코드에 "내 uid 면 특별 취급" 같은 건 없다 — 데이터로만 준다.
+name: 개발자 전체 해금
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "해금할 사람의 닉네임 (구글 연동 필요)"
+        required: false
+      uid:
+        description: "(고급) uid 를 직접 넣기 — 닉네임보다 우선"
+        required: false
+      off:
+        description: "해금 거두기"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: firebase
+  cancel-in-progress: false
+
+jobs:
+  unlock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 구글 클라우드 로그인 (키 없는 연동)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/204724489972/locations/global/workloadIdentityPools/github/providers/github-actions
+          service_account: github-actions@either-or-130af.iam.gserviceaccount.com
+      - name: 도구 설치
+        run: |
+          mkdir -p /tmp/fb && cd /tmp/fb && npm init -y > /dev/null
+          npm install --no-audit --no-fund @google-cloud/firestore@7 google-auth-library@9
+          ln -s /tmp/fb/node_modules "$GITHUB_WORKSPACE/node_modules"
+      - name: 해금하기
+        env:
+          NAME: ${{ inputs.name }}
+          UID: ${{ inputs.uid }}
+          OFF: ${{ inputs.off && '1' || '0' }}
+        run: |
+          set -o pipefail
+          node tools/unlock-all.mjs 2> err.txt | tee out.txt || { echo "::error::해금 실패: $(tr '\n' ' ' < err.txt | cut -c1-3000)"; exit 1; }
+          { echo '```'; cat out.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
