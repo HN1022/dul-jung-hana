@@ -74,15 +74,17 @@ MONTHS = [(n, c) for n, c, _ in pal.PALETTES if "월" in n]
 def monthrow(name, cols):
     key = "m%d" % int(name.split("월")[0])
     mk = MARKS.get(key, "none")
-    cells = "".join('<i style="background:{bg}"><s style="background-image:{mk}"></s></i>'
-                    .format(bg=c, mk=mk) for c in cols)
+    # 10월만 1~3칸이 할로윈 밤이라 문양을 진하게 올린다 (index.html 의 m10 규칙과 같다)
+    cells = "".join('<i class="{cl}" style="background:{bg}"><s style="background-image:{mk}"></s></i>'
+                    .format(cl="lit" if (key == "m10" and i < 3) else "", bg=c, mk=mk)
+                    for i, c in enumerate(cols))
     return '<tr><th>%s</th><td><div class="row">%s</div></td></tr>' % (name, cells)
 months = "".join(monthrow(n, c) for n, c in MONTHS)
 
 rank = "".join(
-    '<li class="rankrow" style="background-image:{g}"><span class="rk">{i}</span>'
+    '<li class="rankrow {k}" style="background-image:{g}"><span class="rk">{i}</span>'
     '<span class="nm">홍길동</span><span class="md">3~5칸·Lv3</span>'
-    '<b class="sc">1,240</b></li>'.format(g=ROWBG[k], i=i + 1)
+    '<b class="sc">1,240</b></li>'.format(k=k, g=ROWBG[k], i=i + 1)
     for i, k in enumerate(ORDER))
 rank += ('<li class="rankrow plain"><span class="rk">5</span><span class="nm">김철수</span>'
          '<span class="md">3~5칸·Lv3</span><b class="sc">980</b></li>')
@@ -99,14 +101,20 @@ html = """<!doctype html><meta charset="utf-8"><title>재질·문양 미리보�
   .row { display:flex; gap:6px; }
   .row i { width:48px; height:48px; border-radius:8px; position:relative; display:grid; place-items:center;
            box-shadow: inset 0 -3px 0 rgba(0,0,0,.18), inset 0 2px 0 rgba(255,255,255,.25); }
+  /* 농도는 index.html 과 같은 값이어야 한다 — 미리보기만 옅게 해 뒀다가 "문양이 안 보인다"고 두 번 속았다. */
   .row i s { position:absolute; inset:0; background-repeat:no-repeat; background-position:center;
-             background-size:52%; opacity:.22; }
+             background-size:56%; opacity:.62; }
+  .row i.lit s { opacity:.92; }
+  .row i.lit { box-shadow: inset 0 -3px 0 rgba(0,0,0,.18), inset 0 2px 0 rgba(255,255,255,.25),
+                           inset 0 0 0 1px rgba(255,255,255,.20); }
   .row i b { position:relative; font-size:11px; color:rgba(0,0,0,.45); align-self:end; margin-bottom:2px; }
   .ranklist { list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column;
               gap:4px; max-width:430px; }
   .rankrow { display:grid; grid-template-columns:2.2em 1fr auto auto; align-items:center; gap:8px;
              padding:9px 12px; border-radius:10px; color:#241A06; font-weight:700; }
   .rankrow.plain { background:#19222B; color:#E7EDF3; }
+  .rankrow.bronze { color:#FFEFE2; }
+  .rankrow.bronze .rk, .rankrow.bronze .md { color:rgba(255,239,226,.70) !important; }
   .rankrow .rk, .rankrow .md { color:rgba(36,26,6,.62); font-weight:700; }
   .rankrow.plain .rk, .rankrow.plain .md { color:#8FA3B4; }
   .rankrow .md { font-size:11.5px; }
@@ -118,14 +126,14 @@ html = """<!doctype html><meta charset="utf-8"><title>재질·문양 미리보�
 __BASE__
 __HALLOWEEN__
 <h2>달마다 색과 문양</h2>
-<p class="note">그 달 색 하나에 밝기만 1칸→6칸으로 다르다. 문양은 흰색에 어두운 테두리라 어디서든 보인다.</p>
+<p class="note">그 달 색 하나에 밝기만 1칸→6칸으로 다르다. 문양은 흰색에 어두운 테두리라 어디서든 보인다.<br>10월만 예외 — 1~3칸은 할로윈 밤, 4~6칸은 호박색이다.</p>
 <table>__MONTHS__</table>
 <h2>순위표</h2>
 <p class="note">등급을 받은 사람은 줄 박스 자체가 그 재질이 된다. 이름은 평범하게 둔다.</p>
 <ol class="ranklist">__RANK__</ol>
 """
 html = (html.replace("__BASE__", section("기본 테마 (문양 없음)", BASE, None))
-            .replace("__HALLOWEEN__", section("10월 할로윈 (호박 문양)", HALLOWEEN, MARKS.get("m10")))
+            .replace("__HALLOWEEN__", section("10월 할로윈 (밤 3색 + 호박 3색)", HALLOWEEN, MARKS.get("m10")))
             .replace("__RANK__", rank)
             .replace("__MONTHS__", months))
 

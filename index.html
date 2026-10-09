@@ -339,27 +339,27 @@
   :root[data-mat1="holo"] { --matbg1: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
   :root[data-mat1="gold"] { --matbg1: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
   :root[data-mat1="silver"] { --matbg1: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
-  :root[data-mat1="bronze"] { --matbg1: linear-gradient(150deg, #FFD9B4, #D59055 35%, #8C5524 60%, #F5C79B); }
+  :root[data-mat1="bronze"] { --matbg1: linear-gradient(150deg, #E8B98F, #B5703A 35%, #7E4518 60%, #D9A271); }
   :root[data-mat2="holo"] { --matbg2: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
   :root[data-mat2="gold"] { --matbg2: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
   :root[data-mat2="silver"] { --matbg2: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
-  :root[data-mat2="bronze"] { --matbg2: linear-gradient(150deg, #FFD9B4, #D59055 35%, #8C5524 60%, #F5C79B); }
+  :root[data-mat2="bronze"] { --matbg2: linear-gradient(150deg, #E8B98F, #B5703A 35%, #7E4518 60%, #D9A271); }
   :root[data-mat3="holo"] { --matbg3: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
   :root[data-mat3="gold"] { --matbg3: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
   :root[data-mat3="silver"] { --matbg3: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
-  :root[data-mat3="bronze"] { --matbg3: linear-gradient(150deg, #FFD9B4, #D59055 35%, #8C5524 60%, #F5C79B); }
+  :root[data-mat3="bronze"] { --matbg3: linear-gradient(150deg, #E8B98F, #B5703A 35%, #7E4518 60%, #D9A271); }
   :root[data-mat4="holo"] { --matbg4: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
   :root[data-mat4="gold"] { --matbg4: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
   :root[data-mat4="silver"] { --matbg4: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
-  :root[data-mat4="bronze"] { --matbg4: linear-gradient(150deg, #FFD9B4, #D59055 35%, #8C5524 60%, #F5C79B); }
+  :root[data-mat4="bronze"] { --matbg4: linear-gradient(150deg, #E8B98F, #B5703A 35%, #7E4518 60%, #D9A271); }
   :root[data-mat5="holo"] { --matbg5: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
   :root[data-mat5="gold"] { --matbg5: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
   :root[data-mat5="silver"] { --matbg5: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
-  :root[data-mat5="bronze"] { --matbg5: linear-gradient(150deg, #FFD9B4, #D59055 35%, #8C5524 60%, #F5C79B); }
+  :root[data-mat5="bronze"] { --matbg5: linear-gradient(150deg, #E8B98F, #B5703A 35%, #7E4518 60%, #D9A271); }
   :root[data-mat6="holo"] { --matbg6: linear-gradient(115deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
   :root[data-mat6="gold"] { --matbg6: linear-gradient(150deg, #FFF1B0, #E9C25C 35%, #B8831F 60%, #FFEFA8); }
   :root[data-mat6="silver"] { --matbg6: linear-gradient(150deg, #FFFFFF, #CBD6DE 35%, #8794A0 60%, #F4F8FA); }
-  :root[data-mat6="bronze"] { --matbg6: linear-gradient(150deg, #FFD9B4, #D59055 35%, #8C5524 60%, #F5C79B); }
+  :root[data-mat6="bronze"] { --matbg6: linear-gradient(150deg, #E8B98F, #B5703A 35%, #7E4518 60%, #D9A271); }
 
   :root[data-mat1="tester"] { --matbg1: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
   :root[data-mat2="tester"] { --matbg2: linear-gradient(115deg, #DFF7FF, #6FD9FF 22%, #B9D8FF 44%, #7BF0DF 66%, #9EC4FF 84%, #DFF7FF); }
@@ -396,6 +396,16 @@
     background-position: center; background-size: 56%; opacity: .62;
   }
 
+  /* 10월은 1~3칸이 할로윈 밤이라 보드 칸(#2B3844)과 밝기가 거의 같다. 그래서 그 세 색만
+     문양을 진하게 올리고 칸 테두리에 가는 흰 선을 둔다 — 흰 잭오랜턴과 그 선이 블록 경계를 알려 준다. */
+  :root[data-theme-mark="m10"] :is(.cell[data-c="1"], .cell[data-c="2"], .cell[data-c="3"],
+                                   .blk.c1, .blk.c2, .blk.c3) {
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18), inset 0 2px 0 rgba(255, 255, 255, 0.25),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.20);
+  }
+  :root[data-theme-mark="m10"] :is(.cell[data-c="1"], .cell[data-c="2"], .cell[data-c="3"],
+                                   .blk.c1, .blk.c2, .blk.c3)::before { opacity: .92; }
+
   /* 도감은 "어떤 모양이 나오는가"를 보는 곳이라 문양을 빼 둔다. 작은 그림이 복잡해지기만 한다. */
   .dexitem .blk::before, .themeitem .sw i::before { background-image: none; }
 
@@ -408,9 +418,18 @@
   .ranklist li.mt .nm .own { color: #1B3C8C; }
   .ranklist li.mt.me { box-shadow: inset 0 0 0 2px #241A06; }
   .ranklist li.mt.holo { background-image: linear-gradient(100deg, #FF9ECB, #FFE680, #9DFFDF, #9BDCFF, #D7AEFF, #FF9ECB); }
-  .ranklist li.mt.gold { background-image: linear-gradient(100deg, #FFF1B0, #E9C25C, #FFEFA8, #D4A32E); }
-  .ranklist li.mt.silver { background-image: linear-gradient(100deg, #FFFFFF, #CBD6DE, #F4F8FA, #AFBCC6); }
-  .ranklist li.mt.bronze { background-image: linear-gradient(100deg, #FFD9B4, #D59055, #F5C79B, #B2763C); }
+  .ranklist li.mt.gold { background-image: linear-gradient(100deg, #FFF8C8, #F0C93F, #FFFBDC, #D9A714); }
+  .ranklist li.mt.silver { background-image: linear-gradient(100deg, #FFFFFF, #C7D3DC, #F4F8FA, #A6B4BF); }
+  /* 동은 어둡게 간다. 연한 황갈색으로 뒀더니 금과 밝기까지 비슷해서 순위표가 온통 금색으로 보였다
+     (게다가 점수를 올린 사람은 전원 최소 동이라 네 등급이 다 같아 보였다).
+     어두운 구리색이면 밝기부터 달라서 멀리서도 금과 구분된다 — 글자만 밝은 쪽으로 바꿔 준다. */
+  .ranklist li.mt.bronze { background-image: linear-gradient(100deg, #A86038, #7E401A, #9A5A33, #6B340F); }
+  .ranklist li.mt.bronze { color: #FFEFE2; }
+  .ranklist li.mt.bronze .rk, .ranklist li.mt.bronze .md { color: rgba(255, 239, 226, .70); }
+  .ranklist li.mt.bronze .nm em { color: #7BF2C8; }
+  .ranklist li.mt.bronze .nm .ttl { color: #FFD58A; }
+  .ranklist li.mt.bronze .nm .own { color: #9DC4FF; }
+  .ranklist li.mt.bronze.me { box-shadow: inset 0 0 0 2px #FFEFE2; }
 
   /* 테마 고르기 */
   .themelist { display: flex; flex-direction: column; gap: 8px; }
@@ -804,11 +823,11 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="themes.js?v=17"></script>
+<script src="themes.js?v=18"></script>
 <script src="i18n.js?v=33"></script>
 <script src="money.js?v=20"></script>
 <script src="engine.js?v=15"></script>
-<script src="leaderboard.js?v=18"></script>
+<script src="leaderboard.js?v=19"></script>
 <script>
 (() => {
   const N = 8;
@@ -2154,7 +2173,8 @@
   // 순위표에서 등급을 보여 주는 자리. 줄 박스 전체가 그 재질이 된다 — 멀리서도 "쟤 홀로그램이네" 가 보인다.
   // 순위표에 오른 사람은 모두 테두리를 갖는다. 지난달 성적이 없으면 가장 아래 등급(동)부터 시작 —
   // 한 사람만 테두리가 있으면 빠진 것처럼 보인다.
-  const matClass = (uid) => "mt " + ((uid && rankTiers[uid]) || "bronze");
+  // 등급을 받은 사람만 줄 박스가 생긴다. 보상 인원(상위 100등) 밖은 평범한 줄이다.
+  const matClass = (uid) => (uid && rankTiers[uid] ? "mt " + rankTiers[uid] : "");
   function loadUnlocks() {
     if (!window.Board || !window.Themes) return;
     Board.myTitles().then((mt) => {

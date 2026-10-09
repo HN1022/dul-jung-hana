@@ -38,6 +38,13 @@ MIN_DE = 19.0           # 6색끼리 (정상 시야)
 MIN_DE_CVD = 8.0        # 적록색맹 시뮬레이션 뒤. 이상치는 11, 타협해서 8
 MIN_CONTRAST = 3.0      # 기본 요구 대비 (면마다 SURFACES 에서 따로 정한다)
 
+# 밝기가 아니라 "문양"으로 경계를 알리는 색들 — {팔레트 이름: 봐 주는 칸 수}.
+# 10월은 "할로윈 밤 3색 + 호박 3색"을 사용자가 일부러 고른 것이다(2026-10-09). 1~3칸은 보드 칸과
+# 밝기가 거의 같아서 여기 대비 검사로는 늘 걸린다. 대신 index.html 에서 그 세 색만 흰 잭오랜턴을
+# 진하게(.92) 깔고 칸에 가는 흰 테두리를 둬서 경계가 보이게 해 뒀다. 그래서 면 대비는 넘어간다.
+# ⚠️ 문양 없는 테마에 이걸 쓰면 블록이 정말 안 보인다. 문양이 있는 달에만 넣을 것.
+MARK_LIT = {"10월 할로윈": (1, 2, 3)}
+
 
 # ---- 색 공간 ----
 def hex_rgb(h):
@@ -148,12 +155,15 @@ def check(name, colors, soft_board=False):
     """colors = 1~6칸 순서의 hex 6개. 문제를 문자열 목록으로 돌려준다."""
     bad = []
     rgb = [hex_rgb(c) for c in colors]
+    lit = MARK_LIT.get(name, ())          # 문양으로 경계를 알리는 칸 수는 면 대비를 안 본다
 
     for sname, shex, need in SURFACES:
         if soft_board and "보드" in sname:
             need = 2.3
         surf = hex_rgb(shex)
         for i, c in enumerate(rgb):
+            if i + 1 in lit:
+                continue
             ct = contrast(c, surf)
             if ct < need:
                 bad.append("[%s] %d칸 %s 이 묻힘 (대비 %.2f:1, %.1f 이상 필요)"

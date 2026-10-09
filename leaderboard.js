@@ -403,12 +403,17 @@
   // 홀로그램·금·은·동은 가진 물건이 아니라 "이번 달 내 순위"에서 바로 나온다. 그래서 서버에 저장하지 않는다.
   // 순위표가 모드×난이도로 나뉘어 있으니, 그 사람이 올라 있는 순위표 중 가장 좋은 비율을 쓴다.
   // 비율로 보는 이유: 등수를 고정하면(예: 30등 안) 사람이 적을 때 전원이 최고 등급이 된다.
+  // 등급 비율 — 보상을 받는 사람 안에서 홀로그램 30% · 금 20% · 은 20% · 동 30%.
+  // max 는 "여기까지 누적"이다(홀로 30%, 금 50%, 은 70%, 동 100%).
   const TIERS = [
-    { id: "holo", max: 0.05 },
-    { id: "gold", max: 0.20 },
-    { id: "silver", max: 0.50 },
-    { id: "bronze", max: 1.00 },   // 그 달에 기록을 올린 사람 전원
+    { id: "holo", max: 0.30 },
+    { id: "gold", max: 0.50 },
+    { id: "silver", max: 0.70 },
+    { id: "bronze", max: 1.00 },
   ];
+  // 보상을 받는 인원. 테스트처럼 사람이 적으면(12명) 전원이 받고, 사람이 늘면 상위 100등까지만 받는다
+  // — 1만 명이면 상위 1% 다. 비율은 그 100명 안에서 위와 같이 나눈다.
+  const TIER_POOL = 100;
   // rows = top() 이 준 줄들. { uid: 등급id } 를 돌려준다.
   function tiers(rows) {
     const boards = {};
@@ -416,11 +421,13 @@
     const best = {};
     Object.values(boards).forEach((list) => {
       const n = list.length;
-      // "상위 5%"는 1등부터 ceil(0.05 × 인원)등까지라는 뜻이다. 올림이라 사람이 적어도 1등은 늘 최고 등급.
+      // "상위 30%"는 1등부터 ceil(0.30 × 인원)등까지라는 뜻이다. 올림이라 사람이 적어도 1등은 늘 최고 등급.
       // (예전에는 등수÷인원으로 쟀는데, 그러면 1명 중 1등이 1.0 이라 꼴찌 취급을 받았다.)
-      const cut = TIERS.map((t) => Math.max(1, Math.ceil(t.max * n)));
+      const pool = Math.min(n, TIER_POOL);
+      const cut = TIERS.map((t) => Math.max(1, Math.ceil(t.max * pool)));
       list.forEach((d, i) => {
         const rank = i + 1;
+        if (rank > pool) return;        // 보상 인원 밖 — 등급 없음(순위표에서 평범한 줄로 나온다)
         const k = cut.findIndex((c) => rank <= c);
         const tier = k < 0 ? TIERS.length - 1 : k;
         if (best[d.uid] === undefined || tier < best[d.uid]) best[d.uid] = tier;   // 작을수록 좋은 등급
