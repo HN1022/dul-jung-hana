@@ -890,7 +890,7 @@
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
 <script src="themes.js?v=18"></script>
-<script src="i18n.js?v=37"></script>
+<script src="i18n.js?v=38"></script>
 <script src="money.js?v=21"></script>
 <script src="engine.js?v=19"></script>
 <script src="leaderboard.js?v=21"></script>
@@ -1477,25 +1477,6 @@
   const REVIVE_PER_DAY = 2;
   const reviveDayKey = () => KEY + "revive-" + new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
   const revivesLeftToday = () => Math.max(0, REVIVE_PER_DAY - (store.get(reviveDayKey()) || 0));
-  // 보상형 광고가 닫히는 동안에는 화면이 아직 광고에 가려져 있다. 바로 지워 버리면 돌아왔을 때
-  // 이미 끝나 있어서 뭐가 일어났는지 모른다("끝나자마자 지워져 있어서 이상하다", 2026-10-10).
-  // 화면이 실제로 보이게 된 뒤에 한 박자 쉬고 보여 준다. 게임 끝 화면은 그동안 그대로 떠 있어서
-  // "광고 끝 → 잠깐 → 줄이 지워진다" 로 읽힌다.
-  function waitVisible(ms) {
-    const seen = document.visibilityState === "visible"
-      ? Promise.resolve()
-      : new Promise((res) => {
-          const on = () => {
-            if (document.visibilityState !== "visible") return;
-            document.removeEventListener("visibilitychange", on);
-            res();
-          };
-          document.addEventListener("visibilitychange", on);
-          setTimeout(() => { document.removeEventListener("visibilitychange", on); res(); }, 3000);
-        });
-    return seen.then(() => new Promise((res) => setTimeout(res, ms)));
-  }
-
   // 광고를 보고 나면 엔진이 무작위로 2~3줄을 지워 준다. 몇 줄인지는 결과 애니메이션에서 보인다.
   function doRevive() {
     const res = E.revive(G);
@@ -1599,9 +1580,23 @@
       e.currentTarget.disabled = true;
       // 앱: 보상형 광고. 광고가 안 떠도(재고 없음·오프라인) 이어하기는 허용한다.
       const btn = e.currentTarget;
+      // 광고가 닫히는 순간 바로 지우면 화면이 아직 광고에 가려져 있어서 못 본다
+      // ("끝나자마자 지워져 있어서 이상하다", 2026-10-10). 그래서 광고 뒤에는 버튼을 하나 두고
+      // 직접 누르게 한다 — 언제 지워지는지 본인이 정하니 놓칠 수가 없다.
       if (Money && Money.isApp && !Money.state.removeAds && Money.showRewarded) {
         await Money.showRewarded();
-        await waitVisible(600);   // 광고가 완전히 걷히고 나서 지우는 걸 보여 준다
+        const box = btn.closest(".revivebox");
+        if (box) {
+          box.innerHTML = `<button class="btn" type="button" data-act="reviveGo">${esc(t("revive_go"))}</button>
+            <small>${esc(t("revive_ready"))}</small>`;
+          const go = box.querySelector('[data-act="reviveGo"]');
+          go.addEventListener("click", (ev) => {
+            ev.currentTarget.disabled = true;
+            if (!doRevive()) ev.currentTarget.disabled = false;
+          });
+          go.focus();
+          return;
+        }
       }
       if (!doRevive()) btn.disabled = false;
     });
