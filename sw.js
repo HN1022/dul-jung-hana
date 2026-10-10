@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v56";   // v56: 아이폰 인앱 브라우저에서 보드 크기가 흔들리던 것 (dvh → svh)
+const VERSION = "v57";   // v57: 단계·블록 모양에 따라 보드 크기가 바뀌던 것
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
