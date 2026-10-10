@@ -238,7 +238,7 @@
        트레이 높이가 달라지고, 남는 높이를 먹는 보드가 그만큼 춤춘다. 높이를 못 박아 둔다.
        border-box 가 꼭 필요하다 — 안 그러면 패딩이 더 붙어서 단계마다 또 달라진다. */
     box-sizing: border-box;
-    height: clamp(132px, 17svh, 140px);
+    height: clamp(158px, 21svh, 168px);
     border-radius: 14px;
     background: var(--panel);
     display: grid; place-items: center;
@@ -276,8 +276,16 @@
   .slot.nofit { grid-template-rows: 1fr auto; }
   .tag { font-size: 13px; color: var(--muted); }
   .sizecard .pts { font-size: 13px; font-weight: 700; color: var(--accent); }
+  /* 칸 바닥 줄 — 왼쪽 📦, 오른쪽 점수. 예전에는 둘 다 절대 위치라 점수가 길어지면(★ 보너스)
+     📦 를 덮어서 보관이 안 눌렸다(2026-10-10 제보). 이제 한 줄에 양끝으로 둔다. */
+  .slotfoot { display: flex; align-items: center; gap: 6px; min-height: 28px; }
+  .storebtn {
+    flex: none; width: 28px; height: 28px; border: 0; border-radius: 8px; padding: 0;
+    background: var(--bg); font-size: 14px; line-height: 1; cursor: pointer;
+  }
+  .storebtn:active { transform: scale(0.9); }
   .ptag {
-    position: absolute; right: 8px; bottom: 6px;
+    margin-left: auto;
     font-size: 12px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums;
   }
   .ptag.tricky { color: #2B1D00; background: var(--warn); padding: 1px 7px; border-radius: 99px; }
@@ -924,8 +932,15 @@
   let items = [], itemCards = [];
 
   // 블록 그림 상자 높이. 이 값이 트레이·보관함 높이를 붙잡아 준다.
-  const TRAY_BOX_H = 72;
-  const HOLD_BOX_H = 38;
+  // 블록 그림 상자. 어떤 모양이 와도 같은 칸 크기로 그리려면, 이 판에서 나올 수 있는
+  // 가장 긴 변(3~5칸 모드는 5, 1~6칸 모드는 6)이 들어갈 만큼 높아야 한다.
+  const TRAY_BOX_H = 96;
+  // 이 판의 블록 칸 크기. 모양마다 다르게 잡으면 돌릴 때마다 블록이 커졌다 작아져서 거슬린다.
+  function trayCellSize(cols) {
+    const boxW = Math.max(60, (tray.clientWidth - (cols - 1) * 12) / cols - 24);
+    const d = (E.MODES[mode] || { max: 6 }).max;
+    return Math.min(24, fitCell({ w: d, h: d }, boxW, TRAY_BOX_H, 3));
+  }
 
   // ---- Hold slots ----
   // 보관 칸은 1개다 (2026-10-09 부터. 그 전에는 2개였고, 더 전에는 1개 + 구독으로 2개였다 —
@@ -1089,9 +1104,7 @@
       slot.innerHTML = `<span class="tag">${esc(t("empty"))}</span>`;
       return slot;
     }
-    const cols = 2 + shownSlots();
-    const boxW = Math.max(60, (tray.clientWidth - (cols - 1) * 12) / cols - 24);
-    slot.appendChild(boxed(buildPiece(p, Math.min(24, fitCell(p, boxW, TRAY_BOX_H, 3)), 3), TRAY_BOX_H));
+    slot.appendChild(boxed(buildPiece(p, trayCellSize(2 + shownSlots()), 3), TRAY_BOX_H));
     return slot;
   }
 
@@ -1137,14 +1150,14 @@
           tray.appendChild(slot);
           return;
         }
-        const boxW = Math.max(60, (tray.clientWidth - (cols - 1) * 12) / cols - 24);
-        const pe = boxed(buildPiece(p, Math.min(24, fitCell(p, boxW, TRAY_BOX_H, 3)), 3), TRAY_BOX_H);
+        const pe = boxed(buildPiece(p, trayCellSize(cols), 3), TRAY_BOX_H);
         slot.appendChild(pe);
+        const foot = document.createElement("div");
+        foot.className = "slotfoot";
         const pt = document.createElement("span");
         pt.className = "ptag" + (isTricky(p) ? " tricky" : "");
         pt.textContent = (isTricky(p) ? "★ " : "") + t("pts", { n: blockPoints(p) });
         if (isTricky(p)) pt.title = t("tricky");
-        slot.appendChild(pt);
         const ok = fitsAnyRotation(p);
         if (ok && control === "drag" && phase === "shape") {
           armDrag(slot, pe, item);
@@ -1162,8 +1175,10 @@
           sb.title = t("store_title");
           sb.setAttribute("aria-label", t("store_aria"));
           sb.addEventListener("click", (e) => { e.stopPropagation(); storeShape(i); });
-          slot.appendChild(sb);
+          foot.appendChild(sb);
         }
+        foot.appendChild(pt);
+        slot.appendChild(foot);
         if (!ok) {
           slot.classList.add("nofit");
           const tag = document.createElement("span");
