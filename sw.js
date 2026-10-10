@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v61";   // v61: 줄 지울 때 보드가 튀던 것
+const VERSION = "v62";   // v62: 이어하기 광고 뒤에 줄 지우는 걸 보여 준다
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
