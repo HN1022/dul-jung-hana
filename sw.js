@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v57";   // v57: 단계·블록 모양에 따라 보드 크기가 바뀌던 것
+const VERSION = "v58";   // v58: 보관을 헤더 칩으로 — 보드가 훨씬 커짐
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [

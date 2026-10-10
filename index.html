@@ -224,8 +224,10 @@
   .step b { color: var(--hot); margin-right: 5px; }
   .step small { font-weight: 500; color: var(--muted); font-size: 13px; margin-left: 4px; }
 
-  .tray { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tray { display: grid; grid-template-columns: repeat(var(--cols, 2), 1fr); gap: 12px; }
   .tray.single { grid-template-columns: 1fr; }
+  /* 보관에서 펼쳐 온 칸은 테두리로 구분해 준다 */
+  .slot.fromhold { box-shadow: inset 0 0 0 2px var(--accent); }
   .slot {
     position: relative;
     /* 보드가 먼저다. 긴 폰에서 하단 광고까지 들어가면 남는 높이를 트레이가 다 먹어서
@@ -615,26 +617,21 @@
   }
   .legal a { color: var(--muted); }
 
-  /* ---- Hold slots ---- */
-  /* 보관 칸은 위의 블록 카드(.tray)와 같은 줄·간격에 맞춘다. "📦 보관" 글자는 윗줄에 */
-  .holdbar { display: grid; grid-template-columns: repeat(var(--slots, 3), 1fr); gap: 6px 12px; align-items: stretch; }
-  .holdlabel { grid-column: 1 / -1; display: flex; align-items: center; font-size: 13px; font-weight: 700; color: var(--muted); white-space: nowrap; }
-  .holdslot {
-    position: relative; min-height: clamp(46px, 7svh, 56px); border-radius: 12px; padding: 5px; border: 0;
-    background: var(--panel); display: grid; place-items: center; color: inherit;
-    transition: box-shadow 120ms ease;
+  /* ---- 보관 ----
+     예전에는 트레이 아래에 따로 한 줄(81px)이 있었는데, 짧은 화면에서 그 높이가 전부 보드에서
+     깎여 나갔다(보드 213 → 보관 줄을 없애면 304). 그래서 헤더 오른쪽에 작은 칩으로 옮기고,
+     쓸 때만 트레이에 세 번째 칸으로 펼친다. 트레이 줄 높이는 칸이 둘이든 셋이든 같아서
+     보드 크기는 그대로다. */
+  .holdchip {
+    flex: none; width: 46px; height: 42px; border: 0; border-radius: 12px; padding: 0;
+    background: var(--panel); color: var(--muted); font: inherit; font-size: 17px;
+    display: grid; place-items: center; position: relative; cursor: pointer;
   }
-  .holdslot.empty, .holdslot.locked { background: transparent; box-shadow: inset 0 0 0 2px var(--panel); }
-  .holdslot.locked { cursor: pointer; font-size: 16px; }
-  .holdslot.match { box-shadow: 0 0 0 3px var(--accent); }
-  .holdslot.nofit .piece { opacity: 0.28; }
-  .holdslot .tag { font-size: 13px; color: var(--muted); }
-  .storebtn {
-    position: absolute; top: 6px; left: 6px;
-    width: 32px; height: 32px; border-radius: 50%; border: 0;
-    background: var(--bg); color: var(--muted); font-size: 15px; line-height: 1; cursor: pointer;
-  }
-  .storebtn:active { transform: scale(0.9); }
+  .holdchip[disabled] { opacity: .45; cursor: default; }
+  .holdchip.on { background: var(--accent); color: #06261D; }
+  .holdchip .piece { padding: 3px; }
+  .holdchip .holdstar { position: absolute; right: 2px; bottom: 0; font-size: 9px; color: var(--warn); }
+
 
   /* ---- Start screen ---- */
   .start {
@@ -696,11 +693,11 @@
 <div class="app">
   <header>
     <button type="button" class="chip" id="menuBtn" data-i18n-aria="menu" aria-label="메뉴">☰ <b id="metaText">3~5칸 · Lv1</b></button>
-    <button type="button" class="iconbtn" id="controlBtn">✏️</button>
     <div class="scores">
       <div class="score big" id="scoreBox"><span data-i18n="score">점수</span><b id="score">0</b></div>
       <div class="score"><span data-i18n="best">최고</span><b id="best">0</b></div>
     </div>
+    <button type="button" class="holdchip" id="holdChip" data-i18n-aria="hold" aria-label="보관"></button>
   </header>
 
   <div class="stage" id="stage">
@@ -712,7 +709,6 @@
     <span class="warn" id="warn" hidden></span>
   </div>
   <div class="tray" id="tray"></div>
-  <div class="holdbar" id="holdBar"></div>
 </div>
 
 <div class="start" id="startScreen" hidden>
@@ -890,7 +886,9 @@
   const $ = (id) => document.getElementById(id);
   const t = (k, v) => (window.I18n ? I18n.t(k, v) : k);
   const modeName = (m) => t(m === "35" ? "mode35" : "mode16");
-  const boardEl = $("board"), stage = $("stage"), tray = $("tray"), holdBar = $("holdBar");
+  const boardEl = $("board"), stage = $("stage"), tray = $("tray"), holdChip = $("holdChip");
+  // 보관 칩을 눌러 펼쳤나. 펼치면 보관한 블록이 트레이에 세 번째 칸으로 나온다.
+  let holdOpen = false;
 
   const store = {
     get(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } },
@@ -1022,6 +1020,7 @@
   }
   // 한 턴이 끝난 뒤(놓기·보관): 엔진이 떨어뜨린 방해 블록을 보여주고 다음 크기 선택으로
   function finishTurn(res) {
+    holdOpen = false;   // 턴이 끝나면 보관은 다시 접는다
     sync();
     renderBoard();
     (res.garbage || []).forEach((i) => {
@@ -1106,11 +1105,14 @@
         : control === "drag"
           ? t(items.length > 1 ? "step_drag_many" : "step_drag_one")
           : t(items.length > 1 ? "step_draw_many" : "step_draw_one");
-      shapes.forEach((p, i) => {
-        const item = items.find((it) => it.from === "s" && it.i === i);
+      // 보관을 펼쳤으면 그 블록도 한 칸 차지한다. 줄 높이는 그대로라 보드는 안 변한다.
+      const extra = holdOpen && held.length && phase === "shape" ? held : [];
+      const cols = shapes.length + extra.length || 1;
+      tray.style.setProperty("--cols", cols);
+      const makeSlot = (p, from, i) => {
+        const item = items.find((it) => it.from === from && it.i === i);
         const slot = document.createElement("div");
-        slot.className = "slot" + (animate ? " enter" : "");
-        const cols = shapes.length > 1 ? 2 : 1;
+        slot.className = "slot" + (animate ? " enter" : "") + (from === "h" ? " fromhold" : "");
         const boxW = Math.max(60, (tray.clientWidth - (cols - 1) * 12) / cols - 24);
         const pe = boxed(buildPiece(p, Math.min(24, fitCell(p, boxW, TRAY_BOX_H, 3)), 3), TRAY_BOX_H);
         slot.appendChild(pe);
@@ -1130,7 +1132,7 @@
             slot.appendChild(rb);
           }
         }
-        if (canStore()) {
+        if (from === "s" && canStore()) {
           const sb = document.createElement("button");
           sb.type = "button"; sb.className = "storebtn"; sb.textContent = "📦";
           sb.title = t("store_title");
@@ -1146,7 +1148,9 @@
         }
         tray.appendChild(slot);
         if (item) itemCards[items.indexOf(item)] = slot;
-      });
+      };
+      shapes.forEach((p, i) => makeSlot(p, "s", i));
+      extra.forEach((p, k) => makeSlot(p, "h", k));
       if (!stuck && control === "draw" && phase === "shape") {
         const status = document.createElement("div");
         status.className = "status";
@@ -1160,48 +1164,34 @@
     updateWarn();
   }
 
+  // 헤더의 보관 칩. 비었으면 📦 만, 들었으면 작은 그림을 보여 준다.
+  // 누르면 트레이에 세 번째 칸으로 펼쳐진다(블록 놓는 단계에서만).
   function renderHold() {
-    holdBar.innerHTML = "";
-    holdBar.style.setProperty("--slots", shownSlots());
-    const label = document.createElement("span");
-    label.className = "holdlabel";
-    label.textContent = t("hold");
-    holdBar.appendChild(label);
-    for (let k = 0; k < shownSlots(); k++) {
-      const p = held[k];
-      const cell = document.createElement("div");
-      cell.className = "holdslot";
-      if (!p) {
-        cell.classList.add("empty");
-        cell.innerHTML = `<span class="tag">${canStore() ? t("tap_to_hold") : t("empty")}</span>`;
-      } else {
-        const boxW = Math.max(40, holdBar.clientWidth / shownSlots() - 20);
-        const pe = boxed(buildPiece(p, Math.min(13, fitCell(p, boxW, HOLD_BOX_H, 2)), 2), HOLD_BOX_H);
-        cell.appendChild(pe);
-        if (isTricky(p)) {
-          const st = document.createElement("span");
-          st.className = "holdstar"; st.textContent = "★"; st.title = t("tricky");
-          cell.appendChild(st);
-        }
-        const item = items.find((it) => it.from === "h" && it.i === k);
-        const ok = phase === "shape" && fitsAnyRotation(p);
-        if (item) itemCards[items.indexOf(item)] = cell;
-        if (phase === "shape" && !ok) cell.classList.add("nofit");
-        if (ok && control === "drag") {
-          armDrag(cell, pe, item);
-          if (p.size > 1) {
-            const rb = document.createElement("button");
-            rb.type = "button"; rb.className = "rot"; rb.textContent = "↻";
-            rb.style.cssText = "width:24px;height:24px;font-size:13px;top:3px;right:3px";
-            rb.setAttribute("aria-label", t("rotate"));
-            rb.addEventListener("click", () => rotateItem(item));
-            cell.appendChild(rb);
-          }
-        }
-      }
-      holdBar.appendChild(cell);
+    holdChip.innerHTML = "";
+    holdChip.classList.toggle("on", holdOpen);
+    const p = held[0];
+    const usable = !!p && phase === "shape";
+    holdChip.disabled = !usable;
+    holdChip.setAttribute("aria-pressed", String(holdOpen));
+    if (!p) {
+      holdChip.textContent = "📦";
+      holdChip.title = canStore() ? t("tap_to_hold") : t("empty");
+      return;
     }
+    const pe = buildPiece(p, Math.min(9, fitCell(p, 40, 32, 1)), 1);
+    holdChip.appendChild(pe);
+    if (isTricky(p)) {
+      const st = document.createElement("span");
+      st.className = "holdstar"; st.textContent = "★"; st.title = t("tricky");
+      holdChip.appendChild(st);
+    }
+    holdChip.title = t("hold");
   }
+  holdChip.addEventListener("click", () => {
+    if (holdChip.disabled) return;
+    holdOpen = !holdOpen;
+    renderTray(false);
+  });
 
   // Put a block aside for later. It costs the whole turn: nothing gets placed
   // and the next turn starts from the size choice again.
@@ -1409,7 +1399,7 @@
   function renderDraw() {
     clearPreview();
     tray.querySelectorAll(".slot.match").forEach((el) => el.classList.remove("match"));
-    holdBar.querySelectorAll(".holdslot.match").forEach((el) => el.classList.remove("match"));
+    tray.querySelectorAll(".slot.match").forEach((el) => el.classList.remove("match"));
     if (phase !== "shape" || !items.length) return;
     const n = drawSet.size, cap = drawCap();
     const m = matchDraw();
@@ -1950,7 +1940,7 @@
     { at: "size",  el: () => tray,    k: () => "tut_odds", extra: tutOdds },   // 크기마다 모양이 몇 가지인지
     { at: "shape", el: () => tray,    k: () => "tut_pick" },
     { at: "shape", el: () => boardEl, k: () => (control === "draw" ? "tut_draw" : "tut_drag") },
-    { at: "shape", el: () => [tray, holdBar], k: () => "tut_hold" },   // 📦 버튼과 보관함을 같이
+    { at: "shape", el: () => [tray, holdChip], k: () => "tut_hold" },   // 📦 버튼과 보관 칩을 같이
     { at: "after", el: () => boardEl, k: () => "tut_end" },
   ];
   // "이 크기는 모양이 몇 가지" — 모드에서 고를 수 있는 크기마다 개수와 실제 모양 몇 개를 보여 준다.
@@ -2095,19 +2085,9 @@
     $("metaText").textContent = Number(level) === 1
       ? t("meta_free", { mode: modeName(mode) })
       : t("meta", { mode: modeName(mode), level: lvLabel(level) });
-    const cb = $("controlBtn");
-    cb.textContent = control === "draw" ? "✏️" : "✋";
-    cb.title = t(control === "draw" ? "ctl_title_draw" : "ctl_title_drag");
-    cb.setAttribute("aria-label", cb.title);
+    // 조작(그리기/끌어놓기)은 시작 화면에서만 고른다. 게임 중 토글은 헤더 자리를 먹어서 뺐고,
+    // 그 자리에 보관 칩이 들어갔다(2026-10-10).
   }
-  $("controlBtn").addEventListener("click", () => {
-    if (drag || paint || phase === "anim") return;
-    control = control === "draw" ? "drag" : "draw";
-    store.set(KEY + "control", control);
-    syncMeta();
-    drawSet = new Set();
-    renderTray(false);
-  });
 
   // ---- Start screen: size mode, difficulty and controls live here now ----
   const startEl = $("startScreen");
