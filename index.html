@@ -150,6 +150,9 @@
   .modes button[aria-pressed="true"] { background: var(--btn); color: var(--btn-ink); }
   @keyframes pulse { 50% { transform: scale(1.07); } }
 
+  /* 블록 칸 높이 — 칸과 트레이가 같은 값을 써야 한다. 한 군데서 정한다. */
+  :root { --slot-h: clamp(158px, 21svh, 168px); }
+
   .stage { position: relative; flex: 1 1 0; min-height: 200px; container-type: size; display: flex; align-items: center; justify-content: center; }
   .board {
     display: grid;
@@ -224,8 +227,16 @@
   .step b { color: var(--hot); margin-right: 5px; }
   .step small { font-weight: 500; color: var(--muted); font-size: 13px; margin-left: 4px; }
 
-  .tray { display: grid; grid-template-columns: repeat(var(--cols, 2), 1fr); gap: 12px; }
-  .tray.single { grid-template-columns: 1fr; }
+  /* ⚠️ 줄이 지워지는 동안(anim) 트레이가 잠깐 빈다. 바닥 높이를 안 주면 트레이가 0 이 되고
+     남는 높이를 먹는 보드가 확 커졌다가 돌아온다 — 한 줄 지울 때마다 화면이 튀었다
+     (2026-10-10 제보, 390x600 에서 278 → 358). 칸 높이와 같은 값을 바닥으로 깔아 둔다. */
+  .tray { display: grid; grid-template-columns: repeat(var(--cols, 2), 1fr); gap: 12px;
+          min-height: var(--slot-h); align-content: start; }
+  /* .tray.single 은 없앴다 — 이제 --cols 가 열 수를 정한다. 한 열로 강제하면 보관 칸이
+     아래로 밀려 트레이가 두 배가 되고 보드가 그만큼 쪼그라들었다(2026-10-10). */
+  /* 그리기 모드는 "지우기" 줄이 한 줄 더 붙는다. 그만큼 바닥도 높여야 트레이가 잠깐 비는
+     순간에도 보드가 안 튄다. 36(줄) + 12(간격). */
+  .tray.drawmode { min-height: calc(var(--slot-h) + 48px); }
   /* 보관 칸은 테두리로 구분해 준다 */
   .slot.fromhold { box-shadow: inset 0 0 0 2px var(--accent); }
   .slot.fromhold.empty { background: transparent; box-shadow: inset 0 0 0 2px var(--panel); }
@@ -238,7 +249,7 @@
        트레이 높이가 달라지고, 남는 높이를 먹는 보드가 그만큼 춤춘다. 높이를 못 박아 둔다.
        border-box 가 꼭 필요하다 — 안 그러면 패딩이 더 붙어서 단계마다 또 달라진다. */
     box-sizing: border-box;
-    height: clamp(158px, 21svh, 168px);
+    height: var(--slot-h);
     border-radius: 14px;
     background: var(--panel);
     display: grid; place-items: center;
@@ -1106,7 +1117,7 @@
   function renderTray(animate = true) {
     buildItems();
     tray.innerHTML = "";
-    tray.classList.toggle("single", phase !== "size" && phase !== "anim" && shapes.length === 1);
+    tray.classList.toggle("drawmode", control === "draw");
     boardEl.classList.toggle("drawing", phase === "shape" && control === "draw");
     const step = $("stepText");
 
@@ -1123,6 +1134,13 @@
       });
       // 보관 칸은 크기 고르는 단계에도 자리를 지킨다 — 안 그러면 칸 폭이 단계마다 바뀐다
       for (let k = 0; k < shownSlots(); k++) tray.appendChild(holdSlotEl(held[k]));
+      // 그리기 모드의 "지우기" 줄도 자리만 미리 잡아 둔다. 블록 놓는 단계에만 생기면
+      // 트레이가 그만큼 높아지고 보드가 줄어든다.
+      if (control === "draw") {
+        const hold = document.createElement("div");
+        hold.className = "status";
+        tray.appendChild(hold);
+      }
     } else if (phase === "shape" || phase === "over") {
       const stuck = !items.some((it) => fitsAnyRotation(it.p));
       step.innerHTML = stuck
