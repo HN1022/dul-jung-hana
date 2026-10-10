@@ -23,6 +23,18 @@ public class MainActivity extends BridgeActivity {
         WebView web = getBridge() != null ? getBridge().getWebView() : null;
         if (web != null) web.addJavascriptInterface(new AppInfo(), "AppInfo");
 
+        // 시스템 글꼴 크기를 아주 크게 해 둔 폰에서 화면이 무너졌다(2026-10-10, 어머니 폰).
+        // WebView 는 그 배율을 글자에 그대로 곱한다 — 안내 문구가 네 줄이 되고, 보드가 쪼그라들고,
+        // 보관 칸이 광고 밑으로 잘려 나갔다. 게임판은 글자가 아니라 칸 크기로 돌아가는 화면이라
+        // 배율을 끝까지 따라가면 못 쓰게 된다.
+        // 그렇다고 무시하면 크게 보려는 사람에게 못 할 짓이라, **상한만 둔다**. 1.2배까지는 따라가고
+        // 그 위로는 더 키우지 않는다. 숫자 하나만 고치면 조절된다.
+        if (web != null) {
+            float wanted = getResources().getConfiguration().fontScale;   // 1.0 = 기본
+            float capped = Math.min(wanted, 1.2f);
+            if (wanted > 0f) web.getSettings().setTextZoom(Math.round(capped / wanted * 100f));
+        }
+
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
