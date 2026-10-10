@@ -262,12 +262,6 @@
   .piece i { border-radius: 4px; }
   .grab { cursor: grab; touch-action: none; }
   .slot.nofit .piece { opacity: 0.28; cursor: default; }
-  .rot {
-    position: absolute; top: 6px; right: 6px;
-    width: 32px; height: 32px; border-radius: 50%; border: 0;
-    background: var(--bg); color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer;
-  }
-  .rot:active { transform: rotate(90deg); }
   .drag {
     position: fixed; left: 0; top: 0; z-index: 50; pointer-events: none; padding: 0;
     filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.3));
@@ -276,17 +270,18 @@
   .slot.nofit { grid-template-rows: 1fr auto; }
   .tag { font-size: 13px; color: var(--muted); }
   .sizecard .pts { font-size: 13px; font-weight: 700; color: var(--accent); }
-  /* 칸 바닥 줄 — 왼쪽 📦, 오른쪽 점수. 예전에는 둘 다 절대 위치라 점수가 길어지면(★ 보너스)
-     📦 를 덮어서 보관이 안 눌렸다(2026-10-10 제보). 이제 한 줄에 양끝으로 둔다. */
-  .slotfoot { display: flex; align-items: center; gap: 6px; min-height: 28px; }
+  /* 📦 는 칸 오른쪽 위, 점수는 바닥 한 줄 가운데. 예전에는 둘이 바닥에서 자리를 다퉈
+     점수가 두 줄로 밀렸고, 점수가 📦 를 덮어서 보관이 안 눌리기도 했다(2026-10-10 제보). */
   .storebtn {
-    flex: none; width: 28px; height: 28px; border: 0; border-radius: 8px; padding: 0;
-    background: var(--bg); font-size: 14px; line-height: 1; cursor: pointer;
+    position: absolute; top: 6px; right: 6px;
+    width: 30px; height: 30px; border: 0; border-radius: 50%; padding: 0;
+    background: var(--bg); font-size: 15px; line-height: 1; cursor: pointer; z-index: 1;
   }
   .storebtn:active { transform: scale(0.9); }
+  .slotfoot { display: flex; align-items: center; justify-content: center; min-height: 22px; }
   .ptag {
-    margin-left: auto;
     font-size: 12px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums;
+    white-space: nowrap;   /* 두 줄로 안 넘어가게 */
   }
   .ptag.tricky { color: #2B1D00; background: var(--warn); padding: 1px 7px; border-radius: 99px; }
   .holdstar { position: absolute; left: 4px; bottom: 2px; font-size: 11px; color: var(--warn); }
@@ -1090,7 +1085,7 @@
     if (!item) return;
     card.classList.add("grab");
     card.addEventListener("pointerdown", (e) => {
-      if (e.target.closest(".rot, .storebtn")) return;
+      if (e.target.closest(".storebtn")) return;
       pressPiece(e, item, pe);
     });
   }
@@ -1159,23 +1154,16 @@
         pt.textContent = (isTricky(p) ? "★ " : "") + t("pts", { n: blockPoints(p) });
         if (isTricky(p)) pt.title = t("tricky");
         const ok = fitsAnyRotation(p);
-        if (ok && control === "drag" && phase === "shape") {
-          armDrag(slot, pe, item);
-          if (p.size > 1) {
-            const rb = document.createElement("button");
-            rb.type = "button"; rb.className = "rot"; rb.textContent = "↻";
-            rb.setAttribute("aria-label", t("rotate"));
-            rb.addEventListener("click", () => rotateItem(item));
-            slot.appendChild(rb);
-          }
-        }
+        // ↻ 버튼은 없앴다. 카드를 탭하면 돌아간다(끌지 않고 떼면 rotateItem). 좁은 칸에서 버튼이
+        // 자리를 먹고 점수를 두 줄로 밀어냈다(2026-10-10).
+        if (ok && control === "drag" && phase === "shape") armDrag(slot, pe, item);
         if (from === "s" && canStore()) {
           const sb = document.createElement("button");
           sb.type = "button"; sb.className = "storebtn"; sb.textContent = "📦";
           sb.title = t("store_title");
           sb.setAttribute("aria-label", t("store_aria"));
           sb.addEventListener("click", (e) => { e.stopPropagation(); storeShape(i); });
-          foot.appendChild(sb);
+          slot.appendChild(sb);   // 칸 오른쪽 위
         }
         foot.appendChild(pt);
         slot.appendChild(foot);
@@ -1351,7 +1339,7 @@
     drag = { item, p: item.p, src, type, size: r0.width, pitch: r1.left - r0.left, cx: e.clientX, cy: e.clientY };
     buildClone();
     src.style.visibility = "hidden";
-    src.parentElement.querySelector(".rot")?.style.setProperty("visibility", "hidden");
+    src.parentElement.querySelector(".storebtn")?.style.setProperty("visibility", "hidden");
     moveDrag(e);
   }
   function moveDrag(e) {
