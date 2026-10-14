@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v63";   // v63: 이어하기 — 광고 뒤 버튼을 눌러서 지운다
+const VERSION = "v64";   // v64: 등급 — 모드·난이도 가리지 않고 하나의 순위로 매긴다
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
