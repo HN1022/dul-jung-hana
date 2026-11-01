@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v65";   // v65: 11월 테마 낙엽 → 붉은 단풍(캐나다 국기 모양 잎)
+const VERSION = "v66";   // v66: 테마 화면 끝까지 스크롤 + 지난달 결산 화면 새로 만듦(테스터 의견)
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
