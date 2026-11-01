@@ -559,9 +559,12 @@
     background: var(--cell-line);
   }
 
+  /* align-items: flex-start — 기본값(stretch)이면 카드 높이가 화면 높이에 묶이고 내용은 카드 밖으로
+     넘친다. 그러면 아래 여백(광고·제스처 바 자리)이 내용 뒤에 붙지 않아서, 맨 아래 항목이 광고 밑에
+     깔린 채로 스크롤이 끝났다 — 테마 목록이 11월(엄마 폰은 9월)부터 안 보이던 문제(2026-11-01). */
   .rank {
     position: fixed; inset: 0; z-index: 30; overflow-y: auto;
-    background: var(--bg); display: flex; justify-content: center;
+    background: var(--bg); display: flex; justify-content: center; align-items: flex-start;
     padding: calc(var(--top-gap) + 20px) 16px calc(var(--bottom-gap) + 28px);
   }
   .rank[hidden] { display: none; }
