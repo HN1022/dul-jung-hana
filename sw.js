@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v66";   // v66: 테마 화면 끝까지 스크롤 + 지난달 결산 화면 새로 만듦(테스터 의견)
+const VERSION = "v67";   // v67: 결산 버튼 "테마 적용하러 가기" + 눌러도 안 넘어가던 문제
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [

@@ -931,7 +931,7 @@
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
 <script src="themes.js?v=19"></script>
-<script src="i18n.js?v=40"></script>
+<script src="i18n.js?v=41"></script>
 <script src="money.js?v=21"></script>
 <script src="engine.js?v=19"></script>
 <script src="leaderboard.js?v=22"></script>
@@ -1998,9 +1998,12 @@
       + (places.length ? `<p class="recapsub">${esc(t("recap_boards"))}</p><div class="recap">${rows}</div>` : "")
       + `<p>${esc(t("recap_note"))}</p>`;
     const go = $("recapGoMat");
+    // history.back() 은 바로 끝나지 않는다. 테마 화면을 곧장 열면 뒤늦게 온 popstate 가 테마 화면을 닫아 버려서
+    // (2026-11-01 "눌렀는데 안 넘어가고 오래 걸린다") 결산이 실제로 닫힌 뒤에 연다.
     if (go) go.addEventListener("click", () => {
-      if (Nav.top() === "recap") Nav.back(); else recapModal.hidden = true;
-      $("startTheme").click();
+      if (Nav.top() !== "recap") { recapModal.hidden = true; $("startTheme").click(); return; }
+      window.addEventListener("popstate", () => setTimeout(() => $("startTheme").click()), { once: true });
+      Nav.back();
     });
     if (recapModal.hidden) Nav.push("recap", () => { recapModal.hidden = true; });
     recapModal.hidden = false;
