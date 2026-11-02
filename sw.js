@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v68";   // v68: 방해 블록에도 재질(빗금은 그대로)
+const VERSION = "v68";   // v68: 방해 블록에 재질(빗금 그대로)·폭탄 문양, 11월 단풍을 적갈색으로
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
