@@ -89,7 +89,7 @@
   }
 
   let myTier = null;                 // 지난달 순위에서 나온 내 등급
-  let mats = {};                     // { 크기(1~6): 재질id }
+  let mats = {};                     // { 크기(1~6) 또는 9(방해 블록): 재질id }
   try { mats = JSON.parse(localStorage.getItem(MAT_KEY) || "{}") || {}; } catch (e) { mats = {}; }
 
   function saveMats() { try { localStorage.setItem(MAT_KEY, JSON.stringify(mats)); } catch (e) {} }
@@ -102,7 +102,7 @@
   }
   function paintMats() {
     const root = document.documentElement;
-    for (let i = 1; i <= 6; i++) root.removeAttribute("data-mat" + i);
+    [1, 2, 3, 4, 5, 6, 9].forEach((i) => root.removeAttribute("data-mat" + i));
     Object.entries(mats).forEach(([size, m]) => root.setAttribute("data-mat" + size, m));
   }
   paintMats();
@@ -131,7 +131,7 @@
     setTier(t) { myTier = t; pruneMats(); return myTier; },
     canUse: (m) => matsOf(myTier).indexOf(m) >= 0,
     mats: () => Object.assign({}, mats),
-    // 크기(1~6)에 재질을 입힌다. m 이 없으면 뗀다. 같은 재질을 두 곳에 쓰지 않는다.
+    // 크기(1~6)나 방해 블록(9)에 재질을 입힌다. m 이 없으면 뗀다. 같은 재질을 두 곳에 쓰지 않는다.
     // 한 크기에는 재질 하나. 같은 재질을 여러 크기에 써도 된다.
     setMat(size, m) {
       if (m && matsOf(myTier).indexOf(m) < 0) return false;   // 못 쓰는 재질

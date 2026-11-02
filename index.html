@@ -218,7 +218,8 @@
   .warn.soon { background: var(--bad); color: #fff; animation: pulse 0.9s ease-in-out infinite; }
   .board .cell[data-c="9"] {   /* .board 를 붙여 위의 공통 블록 그림자보다 우선 */
     background-color: var(--stone);
-    background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.22) 0 3px, transparent 3px 7px);
+    /* 재질을 입혀도 빗금은 위에 남긴다 — 빗금이 방해 블록 표시다(2026-11-02 테스터 의견) */
+    background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.22) 0 3px, transparent 3px 7px), var(--matbg9, none);
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25);
   }
   .cell.garbage-in { z-index: 2; animation: thud 320ms cubic-bezier(0.3, 0, 0.6, 1.4); }
@@ -409,6 +410,12 @@
   :root[data-mat6="silver"] { --matbg6: var(--mat-silver); }
   :root[data-mat6="bronze"] { --matbg6: var(--mat-bronze); }
   :root[data-mat6="tester"] { --matbg6: var(--mat-tester); }
+  /* 9 = 방해 블록(엔진의 색 번호와 같다) */
+  :root[data-mat9="holo"] { --matbg9: var(--mat-holo); }
+  :root[data-mat9="gold"] { --matbg9: var(--mat-gold); }
+  :root[data-mat9="silver"] { --matbg9: var(--mat-silver); }
+  :root[data-mat9="bronze"] { --matbg9: var(--mat-bronze); }
+  :root[data-mat9="tester"] { --matbg9: var(--mat-tester); }
   .cell[data-c="1"], .blk.c1 { background-image: var(--matbg1, none); }
   .cell[data-c="2"], .blk.c2 { background-image: var(--matbg2, none); }
   .cell[data-c="3"], .blk.c3 { background-image: var(--matbg3, none); }
@@ -930,8 +937,8 @@
   })();
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
-<script src="themes.js?v=19"></script>
-<script src="i18n.js?v=41"></script>
+<script src="themes.js?v=20"></script>
+<script src="i18n.js?v=42"></script>
 <script src="money.js?v=21"></script>
 <script src="engine.js?v=19"></script>
 <script src="leaderboard.js?v=22"></script>
@@ -2436,10 +2443,11 @@
       row.innerHTML = `<span class="matsample ${m}"></span><span class="mn">${esc(t("mat_" + m))}</span>`;
       const pick = document.createElement("div");
       pick.className = "matpick";
-      for (let n = 0; n <= 6; n++) {
+      // 0 = 안 씀, 1~6 = 블록 크기, 9 = 방해 블록
+      [0, 1, 2, 3, 4, 5, 6, 9].forEach((n) => {
         const b = document.createElement("button");
         b.type = "button";
-        b.textContent = n === 0 ? t("mat_off") : t("mat_size", { n });
+        b.textContent = n === 0 ? t("mat_off") : n === 9 ? t("mat_blocker") : t("mat_size", { n });
         const on = n === 0 ? !onSizes.length : onSizes.indexOf(String(n)) >= 0;
         if (on) b.classList.add("on");
         b.addEventListener("click", () => {
@@ -2450,7 +2458,7 @@
           renderTray(false);
         });
         pick.appendChild(b);
-      }
+      });
       row.appendChild(pick);
       box.appendChild(row);
     });
