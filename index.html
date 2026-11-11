@@ -685,6 +685,11 @@
   #rankProfBtn[aria-pressed="false"] { opacity: 0.55; }
   .ttls { display: flex; flex-direction: column; gap: 5px; }
   .ttls span { font-size: 13px; font-weight: 700; color: #C08A00; }
+  /* 베타 테스트 참가자 칭호 — 띠 모양. 어떤 배경(밝음·어둠·등급 재질) 위에서도 보이게 어둡게 (2026-11-11) */
+  .tpill, .ttls .tpill {
+    display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; width: max-content;
+    padding: 1px 8px 1px 6px; border-radius: 999px; color: #BFF0FF; background: #0E2F42; box-shadow: 0 0 0 1.5px #6FD9FF;
+  }
   .ranklist .nmbtn {
     background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit;
     text-align: left; width: 100%; overflow: hidden; cursor: pointer;
@@ -949,7 +954,7 @@
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
 <script src="themes.js?v=21"></script>
-<script src="i18n.js?v=43"></script>
+<script src="i18n.js?v=44"></script>
 <script src="money.js?v=21"></script>
 <script src="engine.js?v=19"></script>
 <script src="leaderboard.js?v=22"></script>
@@ -1685,6 +1690,13 @@
   const titleFull = (tt) => (tt.k ? titleText(tt)
     : `${titleText(tt)} · ${modeName(tt.b.split("_")[0])} `
       + `${Number(tt.b.split("_")[1]) === 1 ? t("free_short") : "Lv" + lvLabel(tt.b.split("_")[1])}`);
+  // 칭호 한 개를 그린다. 베타 테스트 참가자는 띠 모양(짙은 남색 + 하늘빛 테두리)이라 시즌 칭호(🏅 금색 글자)와
+  // 색을 안 봐도 모양으로 갈린다. 등급 배경(홀로그램·금·은·동) 위에서도 묻히지 않게 어둡게 했다(2026-11-11).
+  // wrap: 목록(.ttls)처럼 칭호마다 span 하나가 필요한 곳
+  function ttlHtml(tt, fmt, wrap) {
+    if (tt.k === "tester") return `<span class="tpill">🧪 ${esc(fmt(tt))}</span>`;
+    return wrap ? `<span>🏅 ${esc(fmt(tt))}</span>` : `🏅 ${esc(fmt(tt))}`;
+  }
 
   const nameError = (reason) => t(reason === "length" ? "name_err_length" : reason === "chars" ? "name_err_chars"
     : reason === "taken" ? "name_err_taken" : "name_err_bad");
@@ -1849,7 +1861,7 @@
     list.innerHTML = rows.map((r, i) => `
       <li class="${[r.uid && r.uid === me ? "me" : "", matClass(r)].filter(Boolean).join(" ")}">
         <span class="rk">${i + 1}</span>
-        <span class="nm"><button type="button" class="nmbtn" data-prof="${i}">${esc(r.name)}${r.owned ? `<span class="own" title="${esc(t("rank_owned"))}">🛡</span>` : ""}${r.verified ? `<em title="${esc(t("rank_verified"))}">✓</em>` : ""}${r.title ? `<span class="ttl">🏅 ${esc(titleText(r.title))}</span>` : ""}</button></span>
+        <span class="nm"><button type="button" class="nmbtn" data-prof="${i}">${esc(r.name)}${r.owned ? `<span class="own" title="${esc(t("rank_owned"))}">🛡</span>` : ""}${r.verified ? `<em title="${esc(t("rank_verified"))}">✓</em>` : ""}${r.title ? `<span class="ttl">${ttlHtml(r.title, titleText)}</span>` : ""}</button></span>
         <span class="md">${esc(modeName(r.mode))}·${esc(Number(r.level) === 1 ? t("free_short") : "Lv" + lvLabel(r.level))}</span>
         <b class="sc">${r.score}</b>
       </li>`).join("");
@@ -1868,11 +1880,11 @@
     const worn = row.title || null;
     $("profName").textContent = row.name || "?";
     $("profBody").innerHTML =
-      (worn ? `<p class="ok">🏅 ${esc(titleFull(worn))}</p>` : "")
+      (worn ? `<p class="ok">${ttlHtml(worn, titleFull)}</p>` : "")
       + (tt.priv ? `<p>🔒 ${esc(t("prof_private"))}</p>`
         : `<p><b>${esc(t("prof_titles"))} ${tt.list.length}</b></p>`
           + (tt.list.length
-            ? `<div class="ttls">${tt.list.map((x) => `<span>🏅 ${esc(titleFull(x))}</span>`).join("")}</div>`
+            ? `<div class="ttls">${tt.list.map((x) => ttlHtml(x, titleFull, true)).join("")}</div>`
             : `<p>${esc(t("prof_none"))}</p>`));
     if (profModal.hidden) Nav.push("prof", () => { profModal.hidden = true; });
     profModal.hidden = false;
@@ -1925,7 +1937,7 @@
       if (!mt.list.length) { box.hidden = true; return; }
       box.hidden = false;
       const opts = [`<option value="-1">${esc(t("title_none"))}</option>`].concat(mt.list.map((tt, i) =>
-        `<option value="${i}"${i === mt.pick ? " selected" : ""}>🏅 ${esc(titleFull(tt))}</option>`));
+        `<option value="${i}"${i === mt.pick ? " selected" : ""}>${tt.k === "tester" ? "🧪" : "🏅"} ${esc(titleFull(tt))}</option>`));
       box.innerHTML = `<span>${t("rank_title_pick")}</span><select id="rankTitleSel">${opts.join("")}</select>`
         + `<button type="button" class="chip" id="rankProfBtn" aria-pressed="${!mt.priv}">`
         + `${esc(t(mt.priv ? "prof_shut" : "prof_open"))}</button>`
@@ -2011,7 +2023,7 @@
       + own
       + (titles.length
         ? `<p class="recapsub">${esc(t("recap_titles"))}</p><div class="ttls">`
-          + titles.map((x) => `<span>🏅 ${esc(titleFull(x))}</span>`).join("") + `</div>`
+          + titles.map((x) => ttlHtml(x, titleFull, true)).join("") + `</div>`
         : "")
       + (places.length ? `<p class="recapsub">${esc(t("recap_boards"))}</p><div class="recap">${rows}</div>` : "")
       + `<p>${esc(t("recap_note"))}</p>`;

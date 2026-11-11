@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v69";   // v69: 1~12월 문양 새로(5월 꿀벌·6월 포도·9월 한가위 송편)
+const VERSION = "v70";   // v70: 테스터 칭호 "베타 테스트 참가자" + 띠 모양
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
