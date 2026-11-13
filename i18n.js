@@ -96,6 +96,12 @@
       new_record: "신기록!",
       best_n: "최고 기록 {n}",
       again: "한 판 더",
+      share_btn: "친구에게 자랑하기",
+      share_btn_new: "신기록 자랑하기",
+      share_title: "점수 자랑하기",
+      share_text: "블록 딜레마 🧩 {mode} {lv}에서 {score}점! 이길 수 있어?\n▶ 안드로이드: {play}\n▶ 아이폰·PC (설치 없이 바로): {web}",
+      share_copied: "복사됨 — 붙여넣어 보내세요",
+      share_copy_manual: "아래 글을 복사해서 보내세요",
 
       // 순위표
       rank_btn: "🏆 순위표",
@@ -315,6 +321,12 @@
       new_record: "New best!",
       best_n: "Best {n}",
       again: "Play again",
+      share_btn: "Challenge a friend",
+      share_btn_new: "Share your new best",
+      share_title: "Share your score",
+      share_text: "I scored {score} in Block Dilemma 🧩 ({mode} {lv}). Can you beat it?\n▶ Android: {play}\n▶ iPhone / PC (no install): {web}",
+      share_copied: "Copied — paste it to a friend",
+      share_copy_manual: "Copy this and send it",
 
       rank_btn: "🏆 Leaderboard",
       rank_title: "Leaderboard",

@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v70";   // v70: 테스터 칭호 "베타 테스트 참가자" + 띠 모양
+const VERSION = "v71";   // v71: 게임오버 화면 점수 자랑하기(공유) 버튼
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [

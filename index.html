@@ -954,7 +954,7 @@
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
 <script src="themes.js?v=21"></script>
-<script src="i18n.js?v=44"></script>
+<script src="i18n.js?v=45"></script>
 <script src="money.js?v=21"></script>
 <script src="engine.js?v=19"></script>
 <script src="leaderboard.js?v=22"></script>
@@ -1632,14 +1632,16 @@
     const o = document.createElement("div");
     o.className = "overlay";
     o.innerHTML = `<h2>${t("over_title")}</h2>
-      <p>${t("over_mode", { mode: modeName(mode), level })}</p>
+      <p>${Number(level) === 1 ? `${modeName(mode)} · 🕊 ${t("free_short")}` : t("over_mode", { mode: modeName(mode), level: lvLabel(level) })}</p>
       <div class="big">${score}</div>
       <p>${isNew ? `<span class="new">${t("new_record")}</span>` : t("best_n", { n: best })}</p>
+      ${score > 0 ? `<button class="btn small share" type="button" data-act="share">📤 ${t(isNew ? "share_btn_new" : "share_btn")}</button>` : ""}
       ${reviveBox()}
       <div class="rankbox" id="overRank"></div>
       <div class="row"><button class="btn soft" type="button" data-act="menu">${t("menu")}</button><button class="btn" type="button" data-act="again">${t("again")}</button></div>`;
     o.querySelector('[data-act="again"]').addEventListener("click", () => { newGame(); });
     o.querySelector('[data-act="menu"]').addEventListener("click", () => { o.remove(); goMenu(); });
+    o.querySelector('[data-act="share"]')?.addEventListener("click", (e) => shareScore(e.currentTarget));
     o.querySelector('[data-act="revive"]')?.addEventListener("click", async (e) => {
       e.currentTarget.disabled = true;
       // 앱: 보상형 광고. 광고가 안 떠도(재고 없음·오프라인) 이어하기는 허용한다.
@@ -1667,6 +1669,29 @@
     stage.appendChild(o);
     renderOverRank(o.querySelector("#overRank"));
     o.querySelector('[data-act="again"]').focus();
+  }
+
+  // ---- 점수 자랑하기 (2026-11-13) ----
+  // 친구에게 점수 + 링크 두 개를 보낸다: 안드로이드는 플레이스토어, 아이폰·PC 는 설치 없이 바로 되는 웹.
+  // 앱(안드로이드 WebView)엔 navigator.share 가 없어서 @capacitor/share 플러그인을 쓴다.
+  // 둘 다 없으면(PC 브라우저) 클립보드에 복사하고 버튼 글자로 알려준다(토스트는 게임오버 화면에 가려짐).
+  const SHARE_PLAY = "https://play.google.com/store/apps/details?id=com.alwaysone.blockdilemma";
+  const SHARE_WEB = "https://hn1022.github.io/dul-jung-hana/";
+  async function shareScore(btn) {
+    const lv = Number(level) === 1 ? t("free_short") : "Lv" + lvLabel(level);
+    const text = t("share_text", { score, mode: modeName(mode), lv, play: SHARE_PLAY, web: SHARE_WEB });
+    const capShare = window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins.Share;
+    try {
+      if (capShare) { await capShare.share({ text, dialogTitle: t("share_title") }); return; }
+      if (navigator.share) { await navigator.share({ text }); return; }
+    } catch (e) {
+      // 공유 창을 그냥 닫은 경우 — 아무것도 안 한다
+      if (e && (e.name === "AbortError" || /cancel/i.test(String(e.message || e)))) return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      if (btn) { btn.textContent = "✓ " + t("share_copied"); btn.disabled = true; }
+    } catch { window.prompt(t("share_copy_manual"), text); }
   }
 
   // ---- 순위표 ----
