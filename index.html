@@ -301,6 +301,10 @@
   .status { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; }
   .status p { margin: 0; font-size: 14px; color: var(--muted); }
   .status .pickrow { display: inline-flex; gap: 6px; margin-left: 8px; vertical-align: middle; }
+  /* 좁은 폰(갤럭시 S26+)에서 "지우기"가 "지우/기" 두 줄로 꺾여 아래 칸이 높아지고 보드가 줄었다 늘었다 했다 */
+  .status .btn { white-space: nowrap; flex: none; }
+  .status p { min-width: 0; }
+  .status .pickrow .btn { padding: 6px 10px; }
   .status p.ok { color: var(--accent); font-weight: 700; }
   .status p.bad { color: var(--bad); font-weight: 700; }
   .plainbtn {
@@ -954,7 +958,7 @@
 </script>
 <!-- ?v= 는 배포 버전. 파일을 고치면 sw.js 의 VERSION 과 함께 올린다(옛 캐시를 확실히 피하려고). -->
 <script src="themes.js?v=21"></script>
-<script src="i18n.js?v=45"></script>
+<script src="i18n.js?v=46"></script>
 <script src="money.js?v=21"></script>
 <script src="engine.js?v=19"></script>
 <script src="leaderboard.js?v=22"></script>
@@ -1385,6 +1389,15 @@
     }
   });
   window.addEventListener("pointercancel", () => { paint = null; press = null; endDrag(); });
+  // "어느 걸로?" 를 묻는 중엔 초록 테두리 카드를 눌러도 고를 수 있다. 작은 버튼만 되던 때
+  // 카드를 아무리 눌러도 안 놓여서 버그로 보였다(2026-11-13, 갤럭시 S26+ 영상).
+  tray.addEventListener("click", (e) => {
+    if (!pickMs || phase !== "shape" || e.target.closest(".storebtn, [data-pick]")) return;
+    const k = itemCards.indexOf(e.target.closest(".slot"));
+    if (k < 0 || !pickMs.includes(k)) return;
+    pickMs = null;
+    commitDrawing(k);
+  });
 
   // ---- Drag mode: tap to rotate, drag to place ----
   let press = null, drag = null;
@@ -1509,7 +1522,7 @@
       st.className = m >= 0 ? "ok" : bad ? "bad" : "";
       st.textContent =
         n === 0 ? t("draw_start")
-        : m >= 0 ? t(items[m].from === "h" ? "draw_match_hold" : "draw_match")
+        : m >= 0 ? t(matchDrawAll().length > 1 ? "draw_match_pick" : items[m].from === "h" ? "draw_match_hold" : "draw_match")
         : !connected(drawSet) ? t("draw_apart")
         : bad ? t("draw_bad")
         : t("draw_count", { n, goals });

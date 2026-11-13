@@ -8,7 +8,7 @@
  *
  * ASSETS 목록을 고쳤으면 VERSION 을 올릴 것. 그래야 옛 캐시가 지워진다.
  */
-const VERSION = "v71";   // v71: 게임오버 화면 점수 자랑하기(공유) 버튼
+const VERSION = "v72";   // v72: 공유 버튼 + 그리기 "어느 걸로?" 카드 눌러 고르기, 지우기 버튼 줄바꿈 막기
 const CACHE = "duljunghana-" + VERSION;
 
 const ASSETS = [
